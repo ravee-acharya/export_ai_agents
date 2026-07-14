@@ -85,12 +85,17 @@ def _anthropic():
 
 def _gemini():
     _require_key("GEMINI_API_KEY", "gemini")
-    # langchain-google-genai checks GOOGLE_API_KEY first, GEMINI_API_KEY second.
-    # Set both so it works regardless of package version.
-    os.environ["GOOGLE_API_KEY"] = os.environ["GEMINI_API_KEY"]
+    key = os.environ["GEMINI_API_KEY"]
+    # Also set GOOGLE_API_KEY — newer langchain-google-genai checks it first
+    os.environ["GOOGLE_API_KEY"] = key
+    # Explicitly unset GOOGLE_GENAI_USE_VERTEXAI in case Streamlit Cloud has it set,
+    # which would force the OAuth/service-account path and cause 401 UNAUTHENTICATED
+    os.environ.pop("GOOGLE_GENAI_USE_VERTEXAI", None)
     from langchain_google_genai import ChatGoogleGenerativeAI
     return ChatGoogleGenerativeAI(
         model=_MODELS["gemini"],
+        google_api_key=key,
+        vertexai=False,          # force Gemini Developer API, never Vertex AI
         max_output_tokens=_MAX_TOKENS,
     )
 
