@@ -29,7 +29,7 @@ st.caption("AI-powered Export Intelligence Assistant")
 # Sidebar
 # --------------------------------------------------
 
-provider, debug = render_sidebar()
+provider, debug, certifications = render_sidebar()
 
 
 # --------------------------------------------------
@@ -40,10 +40,18 @@ left_panel, chat_panel, right_panel = create_layout()
 
 
 # --------------------------------------------------
-# Service
+# Service — cached in session_state so conversation
+# memory persists across Streamlit reruns
 # --------------------------------------------------
 
-service = ExportService(provider)
+if "export_service" not in st.session_state:
+    st.session_state.export_service = ExportService(provider)
+
+service = st.session_state.export_service
+
+if service.provider != provider:
+    service.provider = provider
+    service.graph = None
 
 
 # --------------------------------------------------
@@ -59,9 +67,7 @@ with chat_panel:
 # --------------------------------------------------
 
 with chat_panel:
-    question = st.chat_input(
-        "Ask about export opportunities..."
-    )
+    question = st.chat_input("Ask about export opportunities...")
 
 
 # --------------------------------------------------
@@ -70,58 +76,35 @@ with chat_panel:
 
 if question:
 
-    # Store user message
     add_user_message(question)
 
-    # Show user message
     with chat_panel:
         with st.chat_message("user"):
             st.markdown(question)
 
     result = None
+    answer = None
 
-    # Generate response
     with chat_panel:
         with st.chat_message("assistant"):
-
             with st.spinner("Analyzing export opportunities..."):
-
                 try:
-
-                    # --------------------------------------------------
-                    # TEMPORARY
-                    # We will switch back to analyze_query()
-                    # after fixing the Parse Query Agent.
-                    # --------------------------------------------------
-
-                    result = service.analyze_query(question)
-
-                    answer = result.get(
-                        "summary",
-                        "No summary generated."
+                    result = service.analyze_query(
+                        question,
+                        certifications=certifications,
                     )
-
+                    answer = result.get("summary", "No summary generated.")
                     st.markdown(answer)
 
                 except Exception as ex:
-
                     answer = str(ex)
-
                     st.error(answer)
 
-    # Save assistant message
     add_assistant_message(answer)
 
-    # --------------------------------------------------
-    # Right Panel
-    # --------------------------------------------------
-
     if result:
-
         with right_panel:
-
             if debug:
                 st.subheader("Developer Output")
                 st.json(result)
-
             render_dashboard(result)

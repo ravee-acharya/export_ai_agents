@@ -85,10 +85,12 @@ def _anthropic():
 
 def _gemini():
     _require_key("GEMINI_API_KEY", "gemini")
+    # langchain-google-genai checks GOOGLE_API_KEY first, GEMINI_API_KEY second.
+    # Set both so it works regardless of package version.
+    os.environ["GOOGLE_API_KEY"] = os.environ["GEMINI_API_KEY"]
     from langchain_google_genai import ChatGoogleGenerativeAI
     return ChatGoogleGenerativeAI(
         model=_MODELS["gemini"],
-        google_api_key=os.environ["GEMINI_API_KEY"],
         max_output_tokens=_MAX_TOKENS,
     )
 

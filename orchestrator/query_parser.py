@@ -6,6 +6,7 @@ import json
 import re
 
 from orchestrator.llm_provider import get_llm
+from orchestrator.registry import detect_agents_from_query, AGENT_REGISTRY
 
 
 COUNTRY_MAP = {
@@ -112,56 +113,72 @@ def _normalize_countries(countries):
     return list(dict.fromkeys(output))
 
 
-def _detect_agents(query: str):
-
-    query = query.lower()
-
-    # Government schemes only
-    if any(
-        word in query
-        for word in [
-            "scheme",
-            "schemes",
-            "subsidy",
-            "subsidies",
-            "government",
-            "benefit",
-            "benefits",
-            "rodtep",
-            "pli",
-            "incentive",
-            "incentives",
-        ]
-    ):
-        return [
-            "scheme_compliance",
-        ]
-
-    # Default
-    return [
-        "demand_signal",
-        "scheme_compliance",
-    ]
+def _validate_agent_selection(candidate) -> list[str] | None:
+    """
+    The LLM-proposed agent list is only trusted if it's a non-empty
+    list of strings that are all real, registered agent names.
+    Anything else (missing, wrong type, hallucinated agent name,
+    empty list) falls back to keyword-based detection rather than
+    silently running zero agents or crashing on an unknown key.
+    """
+    if not isinstance(candidate, list) or not candidate:
+        return None
+    if not all(isinstance(name, str) for name in candidate):
+        return None
+    if not all(name in AGENT_REGISTRY for name in candidate):
+        return None
+    return candidate
 
 
 def parse_query(
     query: str,
     provider=None,
+    conversation_context: str = "",
 ) -> dict:
 
     llm = get_llm(provider)
 
+    available_agents = ", ".join(AGENT_REGISTRY.keys())
+
+    context_block = (
+        f"""
+Prior conversation context (use this to fill in sector/countries/HS
+codes if the current query doesn't restate them -- e.g. a follow-up
+question like "what about the certification costs?" should inherit
+the sector and countries from the prior turn below, not leave them
+empty):
+
+{conversation_context}
+"""
+        if conversation_context
+        else ""
+    )
+
     prompt = f"""
 Return ONLY valid JSON.
-
+{context_block}
 Schema:
 
 {{
     "sector":"",
     "target_countries":[],
     "hs_codes":[],
-    "sme_revenue_cr":null
+    "sme_revenue_cr":null,
+    "relevant_agents":[]
 }}
+
+For "relevant_agents", choose only from this exact list of available
+agents based on what the query is actually asking about: {available_agents}
+
+If the query is a general export opportunity question (not narrowly
+about one topic), include all of them. If it's narrowly about one
+topic (e.g. only asking about government schemes), include only the
+agent(s) that answer that specific question.
+
+If the current query is a follow-up that doesn't restate sector or
+target countries (e.g. "what about pricing?" or "what certifications
+would I need?"), infer them from the prior conversation context above
+rather than leaving target_countries empty.
 
 Query:
 
@@ -192,6 +209,14 @@ Query:
             [],
         )
 
+    # Prefer the LLM's own agent selection (it has the actual query's
+    # semantics available, not just keyword matches) -- but only if it
+    # passes validation. Keyword-based detection remains the fallback,
+    # never removed, so a bad/missing LLM response never breaks agent
+    # selection entirely.
+    llm_agents = _validate_agent_selection(parsed.get("relevant_agents"))
+    agents_to_call = llm_agents if llm_agents is not None else detect_agents_from_query(query)
+
     return {
         "sector": sector,
         "target_countries": countries,
@@ -200,5 +225,5 @@ Query:
             "sme_revenue_cr"
         ),
         "has_udyam_registration": True,
-        "agents_to_call": _detect_agents(query),
+        "agents_to_call": agents_to_call,
     }
