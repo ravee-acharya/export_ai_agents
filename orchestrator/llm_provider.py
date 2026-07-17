@@ -17,7 +17,7 @@ _MODELS = {
     "anthropic":  "claude-sonnet-4-6",
     "gemini":     "gemini-2.5-flash",
     "ollama":     "llama3.1",
-    "openrouter": "meta-llama/llama-3.1-8b-instruct:free",
+    "openrouter": "openrouter/auto",
 }
 
 
@@ -105,13 +105,18 @@ class _GeminiDirectLLM:
         except (KeyError, IndexError) as e:
             raise RuntimeError(f"Unexpected Gemini response shape: {data}") from e
 
-        return _GeminiResponse(content=content)
+        usage = data.get("usageMetadata", {})
+        return _GeminiResponse(content=content, usage_metadata=usage)
 
 
 class _GeminiResponse:
-    """Mirrors the .content attribute that LangChain AIMessage has."""
-    def __init__(self, content: str):
+    """
+    Mirrors the .content attribute that LangChain AIMessage has.
+    Also exposes usage_metadata for token tracking.
+    """
+    def __init__(self, content: str, usage_metadata: dict | None = None):
         self.content = content
+        self.usage_metadata = usage_metadata or {}
 
 
 def _ollama():
