@@ -180,29 +180,19 @@ def synthesize_node(
     rag_output: RAGAgentOutput | None = state.get("rag_output")
     conversation_context = state.get("conversation_context", "")
 
-def synthesize_node(
-    state: OrchestratorState,
-    provider: str | None = None,
-) -> OrchestratorState:
-
-    llm = get_llm(provider)
-
-    scores = state.get("opportunity_scores", [])
-    errors = state.get("errors", [])
-    scheme_output: SchemeComplianceAgentOutput | None = state.get(
-        "scheme_compliance_output"
-    )
-    pricing_output: PricingAgentOutput | None = state.get("pricing_output")
-    risk_output: RiskAgentOutput | None = state.get("risk_output")
-    competitor_output: CompetitorAgentOutput | None = state.get("competitor_output")
-    buyer_output: BuyerDiscoveryOutput | None = state.get("buyer_discovery_output")
-    fta_output: FTAAgentOutput | None = state.get("fta_output")
-    doc_output: DocumentIntelligenceOutput | None = state.get(
-        "document_intelligence_output"
-    )
-    cert_output: CertificationAgentOutput | None = state.get("certification_output")
-    rag_output: RAGAgentOutput | None = state.get("rag_output")
-    conversation_context = state.get("conversation_context", "")
+    if state.get("markets_auto_selected"):
+        auto_note = (
+            "The user did not name specific target countries in their "
+            "question -- you evaluated a representative spread of major "
+            f"export markets ({', '.join(state.get('target_countries', []))}) "
+            "on their behalf. Say so plainly at the start of your answer "
+            "(e.g. 'Since you didn't name specific markets, I evaluated "
+            "a few major ones for you:'), so it's clear these were chosen "
+            "for the person, not requested by them."
+        )
+        conversation_context = (
+            f"{auto_note}\n\n{conversation_context}" if conversation_context else auto_note
+        )
 
     schemes = _eligible_scheme_lines(scheme_output)
     pricing_lines = _pricing_summary_lines(pricing_output)

@@ -37,6 +37,13 @@ class OrchestratorState(TypedDict, total=False):
     hs_codes: list[str]
     target_countries: list[str]
 
+    # Set by the planner when the person asked a market-discovery
+    # question ("which markets should I target?") without naming any
+    # country, so a default candidate list was substituted. The
+    # synthesizer uses this to tell the person plainly that these
+    # markets were chosen for them, not requested.
+    markets_auto_selected: bool
+
     sme_revenue_cr: Optional[float]
     has_udyam_registration: bool
     sme_certifications: Optional[list[str]]
