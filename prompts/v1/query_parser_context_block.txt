@@ -1,0 +1,8 @@
+
+Prior conversation context (use this to fill in sector/countries/HS
+codes if the current query doesn't restate them -- e.g. a follow-up
+question like "what about the certification costs?" should inherit
+the sector and countries from the prior turn below, not leave them
+empty):
+
+{conversation_context}

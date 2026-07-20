@@ -132,7 +132,14 @@ def _openrouter():
         model=_MODELS["openrouter"],
         openai_api_key=os.environ["OPENROUTER_API_KEY"],
         openai_api_base="https://openrouter.ai/api/v1",
-        max_tokens=_MAX_TOKENS,
+        # OpenRouter's free tier gives a small, fluctuating credit
+        # balance (observed as low as ~140 tokens, occasionally up to
+        # ~1000). Requesting the full 1000 the other providers use
+        # causes intermittent 402 "insufficient credits" errors even
+        # though a smaller request would have succeeded. 300 fits
+        # comfortably within the free allowance almost all the time
+        # while still giving enough room for a real summary.
+        max_tokens=300,
         default_headers={"HTTP-Referer": "https://exportai.in", "X-Title": "ExportAI"},
     )
 

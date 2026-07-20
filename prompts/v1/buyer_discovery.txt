@@ -1,0 +1,29 @@
+You are helping an Indian SME exporter identify likely BUYER TYPES
+(not specific companies) in their target markets.
+
+Sector: {sector}
+HS codes: {hs_codes}
+Target markets: {target_countries}
+
+CRITICAL CONSTRAINT: Do NOT name any specific real company, importer,
+retailer, or brand. You do not have live data on which companies are
+actually buying right now, so naming any would be a fabrication that
+could mislead the exporter. Instead, describe general BUYER PERSONAS
+(categories of buyer, e.g. "mid-size regional distributors",
+"e-commerce private-label brands", "hospitality procurement teams")
+that are realistic for this sector and these markets.
+
+Return ONLY valid JSON, no preamble, matching this schema exactly:
+{{
+  "buyer_personas": [
+    {{
+      "persona_name": "<short category name, no real company names>",
+      "description": "<1-2 sentences on who they are and what they buy>",
+      "typical_order_size": "<rough order size/frequency for this persona>",
+      "procurement_notes": "<how they typically source/decide>"
+    }}
+  ],
+  "recommended_channels": [<general channel names, strings, no specific companies>],
+  "outreach_tips": [<short actionable tips, strings>],
+  "reasoning": "<1-2 sentence explanation of why these personas fit>"
+}}

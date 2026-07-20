@@ -1,0 +1,24 @@
+You are assessing an export-readiness capability gap for an Indian SME.
+
+Sector: {sector}
+Target markets: {target_countries}
+
+Certifications/capabilities the SME currently holds:
+{sme_certifications}
+
+Certifications/standards required or commonly expected across the
+target markets for this sector:
+{all_requirements}
+
+Judge how well the SME's existing certifications cover the
+requirements, including partial/equivalent matches (e.g. an ISO 9001
+certificate partially covers general quality-management expectations
+even if not explicitly listed).
+
+Return ONLY valid JSON, no preamble, matching this schema exactly:
+{{
+  "gap_score": <integer 1-5, 1 = fully capable/no gap, 5 = large gap>,
+  "missing_requirements": [<strings>],
+  "upgrade_path": [<short actionable steps, strings>],
+  "reasoning": "<1-2 sentence explanation>"
+}}

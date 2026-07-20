@@ -1,0 +1,4 @@
+# Streamlit UI container dependencies
+# Only what the frontend needs -- agent/LLM packages are NOT installed here
+streamlit>=1.30.0
+requests>=2.31.0

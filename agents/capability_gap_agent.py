@@ -78,35 +78,22 @@ def run_capability_gap_agent(
 
     llm = get_llm(provider)
 
-    prompt = f"""
-You are assessing an export-readiness capability gap for an Indian SME.
-
-Sector: {sector}
-Target markets: {", ".join(target_countries)}
-
-Certifications/capabilities the SME currently holds:
-{json.dumps(sme_certifications)}
-
-Certifications/standards required or commonly expected across the
-target markets for this sector:
-{json.dumps(all_requirements)}
-
-Judge how well the SME's existing certifications cover the
-requirements, including partial/equivalent matches (e.g. an ISO 9001
-certificate partially covers general quality-management expectations
-even if not explicitly listed).
-
-Return ONLY valid JSON, no preamble, matching this schema exactly:
-{{
-  "gap_score": <integer 1-5, 1 = fully capable/no gap, 5 = large gap>,
-  "missing_requirements": [<strings>],
-  "upgrade_path": [<short actionable steps, strings>],
-  "reasoning": "<1-2 sentence explanation>"
-}}
-"""
+    from prompts.manager import render_prompt
+    prompt = render_prompt(
+        "capability_gap",
+        sector=sector,
+        target_countries=", ".join(target_countries),
+        sme_certifications=json.dumps(sme_certifications),
+        all_requirements=json.dumps(all_requirements),
+    )
 
     try:
         response = llm.invoke(prompt)
+        try:
+            from orchestrator.token_tracker import record_usage
+            record_usage("capability_gap", response)
+        except Exception:
+            pass
         parsed = _extract_json(response.content)
 
         gap_score = int(parsed.get("gap_score", 3))

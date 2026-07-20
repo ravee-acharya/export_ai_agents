@@ -92,7 +92,10 @@ def run_demand_signal_agent(
                 sector=sector,
                 lookback_months=lookback_months,
             )
-            growth_rate = _growth_rate_from_volumes(raw["monthly_volumes"])
+            # Prefer growth_rate_pct from the real Comtrade API (computed
+            # from annual YoY data) when available; fall back to the
+            # monthly-volume computation for mock/fallback data.
+            growth_rate = raw.get("growth_rate_pct") or                 _growth_rate_from_volumes(raw["monthly_volumes"])
             signals.append(
                 DemandSignal(
                     hs_code=raw["hs_code"],

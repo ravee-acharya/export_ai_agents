@@ -266,26 +266,14 @@ def synthesize_node(
         )
     )
     if only_schemes:
-        prompt = f"""
-You are ExportAI.
-
-The user requested government schemes.
-
-Available schemes:
-
-{schemes}
-
-Write a concise summary.
-
-Mention:
-
-- Best schemes
-- Key benefits
-- Who should apply
-
-Maximum 150 words.
-"""
+        from prompts.manager import render_prompt
+        prompt = render_prompt("synthesizer_schemes", schemes=schemes)
         response = llm.invoke(prompt)
+        try:
+            from orchestrator.token_tracker import record_usage
+            record_usage("synthesizer", response)
+        except Exception:
+            pass
         return {"summary": response.content.strip()}
 
     # --------------------------------------------------
@@ -307,70 +295,26 @@ just stay consistent with it)
         else ""
     )
 
-    prompt = f"""
-You are ExportAI.
-{context_block}
-Opportunity Scores
+    from prompts.manager import render_prompt
+    prompt = render_prompt(
+        "synthesizer_main",
+        context_block=context_block,
+        scores_json=scores_json or "(not computed for this query -- the question didn't require a full opportunity assessment)",
+        pricing_lines=pricing_lines or "(not requested for this query)",
+        risk_lines=risk_lines or "(not requested for this query)",
+        competitor_lines=competitor_lines or "(not requested for this query)",
+        buyer_lines=buyer_lines or "(not requested for this query)",
+        fta_lines=fta_lines or "(not requested for this query)",
+        doc_lines=doc_lines or "(not requested for this query)",
+        cert_lines=cert_lines or "(not requested for this query)",
+        rag_lines=rag_lines or "(none retrieved)",
+        schemes=schemes or "(not requested for this query)",
+    )
 
-{scores_json or "(not computed for this query -- the question didn't require a full opportunity assessment)"}
-
-Pricing Signals
-
-{pricing_lines or "(not requested for this query)"}
-
-Country Risk
-
-{risk_lines or "(not requested for this query)"}
-
-Global Competitor Landscape
-
-{competitor_lines or "(not requested for this query)"}
-
-Buyer Personas
-
-{buyer_lines or "(not requested for this query)"}
-
-FTA / Tariff Position
-
-{fta_lines or "(not requested for this query)"}
-
-Required Export Documents
-
-{doc_lines or "(not requested for this query)"}
-
-Certification Process Details
-
-{cert_lines or "(not requested for this query)"}
-
-Reference Knowledge
-
-{rag_lines or "(none retrieved)"}
-
-Government Schemes
-
-{schemes or "(not requested for this query)"}
-
-Write a direct, helpful answer to the user's actual question, using
-only the sections above that have real data. Do not apologize for or
-mention sections marked "(not requested for this query)" -- simply
-don't discuss those topics. If Opportunity Scores were not computed,
-do not say an opportunity assessment is missing; just answer using
-whatever data is available (e.g. pricing, risk, certifications).
-
-Cover, wherever data is available:
-
-- Recommended pricing/FOB and margin
-- Country risk level and any sanctions/ECGC cover concerns
-- Competition (Indian supplier density and/or global competitor landscape)
-- Who the likely buyer types are and how to reach them
-  (describe buyer categories only — never invent specific company names)
-- FTA tariff savings, rules-of-origin requirements, and any anti-dumping/
-  countervailing duties
-- Key mandatory export documents
-- Certification cost/timeline
-- Best government scheme
-
-Maximum 300 words.
-"""
     response = llm.invoke(prompt)
+    try:
+        from orchestrator.token_tracker import record_usage
+        record_usage("synthesizer", response)
+    except Exception:
+        pass
     return {"summary": response.content.strip()}

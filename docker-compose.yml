@@ -1,0 +1,95 @@
+version: "3.9"
+
+# ExportAI — full production stack
+#
+# Services:
+#   postgres  — persistent query/session storage
+#   redis     — session memory (fast, ephemeral)
+#   api       — FastAPI backend (LangGraph orchestrator + all agents)
+#   ui        — Streamlit frontend (thin client, no agent code)
+#
+# Usage:
+#   cp .env.example .env && nano .env   # fill in API keys
+#   docker compose up --build           # first run (~3-4 min to build)
+#   docker compose up                   # subsequent runs (~10s)
+#   docker compose down                 # stop all services
+#   docker compose logs api -f          # tail API logs
+#   docker compose ps                   # check service health
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: exportai
+      POSTGRES_USER: exportai
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-exportai_dev}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U exportai -d exportai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://exportai:${POSTGRES_PASSWORD:-exportai_dev}@postgres:5432/exportai
+      - REDIS_URL=redis://redis:6379
+      - EXPORT_AI_LLM=${EXPORT_AI_LLM:-openrouter}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - SESSION_TTL_SECONDS=${SESSION_TTL_SECONDS:-86400}
+      - PROMPT_VERSION=${PROMPT_VERSION:-v1}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/live"]
+      interval: 20s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+
+  ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
+    restart: unless-stopped
+    ports:
+      - "8501:8501"
+    environment:
+      - API_BASE_URL=http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:

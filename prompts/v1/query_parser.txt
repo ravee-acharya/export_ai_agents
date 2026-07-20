@@ -1,0 +1,28 @@
+Return ONLY valid JSON.
+{context_block}
+Schema:
+
+{{
+    "sector":"",
+    "target_countries":[],
+    "hs_codes":[],
+    "sme_revenue_cr":null,
+    "relevant_agents":[]
+}}
+
+For "relevant_agents", choose only from this exact list of available
+agents based on what the query is actually asking about: {available_agents}
+
+If the query is a general export opportunity question (not narrowly
+about one topic), include all of them. If it's narrowly about one
+topic (e.g. only asking about government schemes), include only the
+agent(s) that answer that specific question.
+
+If the current query is a follow-up that doesn't restate sector or
+target countries (e.g. "what about pricing?" or "what certifications
+would I need?"), infer them from the prior conversation context above
+rather than leaving target_countries empty.
+
+Query:
+
+{query}

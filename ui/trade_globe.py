@@ -1,31 +1,21 @@
 """
-3D Trade Routes Globe.
+Trade Routes Globe — real country borders via D3 geoOrthographic.
 
-The signature visual of the ExportAI dashboard: an interactive 3D
-globe (Three.js, rendered via streamlit.components.v1.html) centered
-on India, with animated arcs flying to each target market. Arc color
-encodes opportunity score (teal = strong, brass = moderate, coral =
-weak); destination markers scale with score. Drag to rotate, scroll
-to zoom.
-
-Design notes / constraints:
-- Three.js is loaded from cdnjs (the CDN Streamlit component iframes
-  can reach). If the user is offline, the component degrades to a
-  short text note rather than a broken canvas.
-- Rendered inside an iframe by Streamlit, so it can't read app state
-  directly -- everything it needs is serialized into the HTML at
-  render time (market list with lat/lon/score).
-- Country coordinates are a small built-in table; unknown countries
-  are skipped silently rather than plotted at (0,0) in the Atlantic.
+Replaces the blank Three.js wireframe sphere with a proper interactive
+world map rendered using:
+  - D3.js geoOrthographic projection (real geographic sphere)
+  - Natural Earth 110m country borders (world-atlas TopoJSON from jsdelivr)
+  - TopoJSON client library for border extraction
+  - Animated great-circle arcs from India to target markets
+  - Score-colored pulsing markers with country name + score tooltips
+  - Drag to rotate, scroll to zoom, click marker for details
 """
 
 import json
-
 import streamlit.components.v1 as components
 
-# Approximate centroid coordinates for supported markets.
 _COUNTRY_COORDS = {
-    "IN": (20.6, 78.9),   # India -- origin of all arcs
+    "IN": (20.6, 78.9),
     "US": (39.8, -98.6),
     "DE": (51.2, 10.4),
     "GB": (54.0, -2.5),
@@ -39,294 +29,488 @@ _COUNTRY_COORDS = {
     "ES": (40.5, -3.7),
     "NL": (52.1, 5.3),
     "BE": (50.6, 4.5),
+    "CN": (35.9, 104.2),
+    "KR": (36.5, 127.5),
+    "BR": (-14.2, -51.9),
+    "ZA": (-30.6, 22.9),
+    "SA": (23.9, 45.1),
+}
+
+_COUNTRY_NAMES = {
+    "IN": "India", "US": "United States", "DE": "Germany",
+    "GB": "United Kingdom", "CA": "Canada", "AU": "Australia",
+    "AE": "UAE", "SG": "Singapore", "JP": "Japan",
+    "FR": "France", "IT": "Italy", "ES": "Spain",
+    "NL": "Netherlands", "BE": "Belgium", "CN": "China",
+    "KR": "South Korea", "BR": "Brazil", "ZA": "South Africa",
+    "SA": "Saudi Arabia",
 }
 
 
 def _score_color(score: float) -> str:
     if score >= 60:
-        return "#3FB8AF"  # teal -- strong
+        return "#3FB8AF"
     if score >= 30:
-        return "#E3A857"  # brass -- moderate
-    return "#E2725B"      # coral -- weak
+        return "#E3A857"
+    return "#E2725B"
 
 
-def render_trade_globe(opportunity_scores: list[dict], height: int = 420) -> None:
-    """
-    Render the globe. Takes the same opportunity_scores list the rest
-    of the dashboard uses; aggregates to one best score per country.
-    Renders nothing (silently) if no scored country has coordinates.
-    """
-    best_per_country: dict[str, float] = {}
+def render_trade_globe(opportunity_scores: list[dict], height: int = 500) -> None:
+    best: dict[str, float] = {}
     for s in opportunity_scores or []:
-        country = s.get("destination_country", "").upper()
+        code = s.get("destination_country", "").upper()
         score = float(s.get("score", 0))
-        if country in _COUNTRY_COORDS:
-            best_per_country[country] = max(best_per_country.get(country, 0), score)
+        if code in _COUNTRY_COORDS:
+            best[code] = max(best.get(code, 0), score)
 
-    if not best_per_country:
+    if not best:
         return
 
     markets = [
         {
             "code": code,
+            "name": _COUNTRY_NAMES.get(code, code),
             "lat": _COUNTRY_COORDS[code][0],
             "lon": _COUNTRY_COORDS[code][1],
-            "score": score,
+            "score": round(score, 1),
             "color": _score_color(score),
         }
-        for code, score in best_per_country.items()
+        for code, score in best.items()
     ]
 
-    origin = {"lat": _COUNTRY_COORDS["IN"][0], "lon": _COUNTRY_COORDS["IN"][1]}
+    origin = {
+        "lat": _COUNTRY_COORDS["IN"][0],
+        "lon": _COUNTRY_COORDS["IN"][1],
+        "name": "India (Origin)",
+    }
 
-    html = _GLOBE_TEMPLATE.replace("__MARKETS__", json.dumps(markets)).replace(
-        "__ORIGIN__", json.dumps(origin)
-    )
-
+    html = _build_html(markets, origin)
     components.html(html, height=height)
 
 
-_GLOBE_TEMPLATE = """
-<!DOCTYPE html>
+def _build_html(markets, origin) -> str:
+    markets_json = json.dumps(markets)
+    origin_json = json.dumps(origin)
+
+    return f"""<!DOCTYPE html>
 <html>
 <head>
+<meta charset="utf-8">
 <style>
-  html, body { margin: 0; padding: 0; background: transparent; overflow: hidden; }
-  #globe-wrap { width: 100%; height: 100vh; position: relative; }
-  #legend {
-    position: absolute; bottom: 10px; left: 12px;
-    font-family: Arial, sans-serif; font-size: 11px; color: #9CA3BF;
-    background: rgba(13,18,32,0.75); border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 8px; padding: 7px 10px; line-height: 1.7;
-  }
-  #legend .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
-  #hint {
-    position: absolute; top: 10px; right: 12px;
-    font-family: Arial, sans-serif; font-size: 10.5px; color: #9CA3BF;
-    background: rgba(13,18,32,0.75); border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 8px; padding: 5px 9px;
-  }
-  #fallback {
-    display: none; color: #9CA3BF; font-family: Arial, sans-serif;
-    font-size: 12px; padding: 20px; text-align: center;
-  }
+  html, body {{
+    margin: 0; padding: 0;
+    background: #0D1220;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+  }}
+  #globe-container {{
+    position: relative;
+    width: 100%;
+    height: 100vh;
+  }}
+  svg {{
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+  }}
+  svg:active {{ cursor: grabbing; }}
+
+  .country {{
+    fill: #1a2540;
+    stroke: #2d4070;
+    stroke-width: 0.5px;
+    transition: fill 0.2s;
+  }}
+  .country:hover {{ fill: #243560; }}
+  .graticule {{
+    fill: none;
+    stroke: #1c2d50;
+    stroke-width: 0.4px;
+  }}
+  .sphere {{
+    fill: #0d1833;
+  }}
+  .border {{
+    fill: none;
+    stroke: #3a5080;
+    stroke-width: 0.8px;
+  }}
+  .arc {{
+    fill: none;
+    stroke-width: 1.8px;
+    opacity: 0;
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+  }}
+  .origin-marker {{
+    fill: #E3A857;
+    stroke: #fff;
+    stroke-width: 1.5px;
+  }}
+  .origin-ring {{
+    fill: none;
+    stroke: #E3A857;
+    stroke-width: 1.5px;
+    opacity: 0.7;
+  }}
+  .dest-marker {{
+    stroke: #fff;
+    stroke-width: 1px;
+    cursor: pointer;
+  }}
+  .dest-ring {{
+    fill: none;
+    stroke-width: 1px;
+    opacity: 0.5;
+  }}
+  .india-label {{
+    fill: #E3A857;
+    font-size: 11px;
+    font-weight: bold;
+    pointer-events: none;
+  }}
+  .dest-label {{
+    fill: #EDEAE2;
+    font-size: 10px;
+    font-weight: 600;
+    pointer-events: none;
+    text-shadow: 0 1px 3px #0d1220;
+    paint-order: stroke;
+    stroke: #0d1220;
+    stroke-width: 3px;
+  }}
+
+  /* Tooltip */
+  #tooltip {{
+    position: absolute;
+    background: rgba(22,29,51,0.95);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 10px;
+    padding: 10px 14px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+    min-width: 150px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  }}
+  #tooltip .tt-country {{ color: #EDEAE2; font-size: 13px; font-weight: bold; margin-bottom: 4px; }}
+  #tooltip .tt-score {{ font-size: 22px; font-weight: bold; font-family: Georgia, serif; }}
+  #tooltip .tt-label {{ color: #9CA3BF; font-size: 10px; margin-top: 2px; }}
+  #tooltip .tt-strong {{ color: #3FB8AF; }}
+  #tooltip .tt-mod {{ color: #E3A857; }}
+  #tooltip .tt-weak {{ color: #E2725B; }}
+
+  /* Legend */
+  #legend {{
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    background: rgba(13,18,32,0.8);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 11px;
+    color: #9CA3BF;
+  }}
+  #legend .row {{ display: flex; align-items: center; gap: 6px; margin: 3px 0; }}
+  #legend .dot {{ width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }}
+  #hint {{
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    font-size: 10.5px;
+    color: #9CA3BF;
+    background: rgba(13,18,32,0.7);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 6px;
+    padding: 4px 9px;
+  }}
+  #fallback {{
+    display: none;
+    color: #9CA3BF;
+    font-size: 13px;
+    padding: 40px;
+    text-align: center;
+  }}
 </style>
 </head>
 <body>
-<div id="globe-wrap">
+<div id="globe-container">
+  <svg id="globe-svg"></svg>
+  <div id="tooltip"><div class="tt-country"></div><div class="tt-score"></div><div class="tt-label"></div></div>
   <div id="legend">
-    <span class="dot" style="background:#3FB8AF"></span>Strong opportunity<br>
-    <span class="dot" style="background:#E3A857"></span>Moderate<br>
-    <span class="dot" style="background:#E2725B"></span>Weak
+    <div class="row"><div class="dot" style="background:#3FB8AF"></div> Strong (60+)</div>
+    <div class="row"><div class="dot" style="background:#E3A857"></div> Moderate (30–60)</div>
+    <div class="row"><div class="dot" style="background:#E2725B"></div> Weak (&lt;30)</div>
+    <div class="row"><div class="dot" style="background:#E3A857;border:2px solid #fff"></div> India (origin)</div>
   </div>
-  <div id="hint">Drag to rotate &middot; scroll to zoom</div>
-  <div id="fallback">3D globe unavailable (couldn't load the graphics library). Your data is unaffected.</div>
+  <div id="hint">Drag · Scroll · Hover</div>
+  <div id="fallback">Globe unavailable — check internet connection</div>
 </div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<!-- D3 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<!-- TopoJSON client -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+
 <script>
-if (typeof THREE === 'undefined') {
-  document.getElementById('fallback').style.display = 'block';
-  document.getElementById('legend').style.display = 'none';
-  document.getElementById('hint').style.display = 'none';
-} else {
+var MARKETS = {markets_json};
+var ORIGIN  = {origin_json};
 
-const MARKETS = __MARKETS__;
-const ORIGIN = __ORIGIN__;
+window.addEventListener('load', function() {{
+  if (typeof d3 === 'undefined' || typeof topojson === 'undefined') {{
+    document.getElementById('fallback').style.display = 'block';
+    document.getElementById('globe-svg').style.display = 'none';
+    return;
+  }}
+  buildGlobe();
+}});
 
-const wrap = document.getElementById('globe-wrap');
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(45, wrap.clientWidth / wrap.clientHeight, 0.1, 1000);
-camera.position.set(0, 1.2, 4.6);
+function buildGlobe() {{
+  var container = document.getElementById('globe-container');
+  var W = container.clientWidth  || 700;
+  var H = container.clientHeight || 480;
+  var RADIUS = Math.min(W, H) * 0.44;
 
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-renderer.setSize(wrap.clientWidth, wrap.clientHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-wrap.appendChild(renderer.domElement);
+  // Projection: start centered on India
+  var projection = d3.geoOrthographic()
+    .scale(RADIUS)
+    .translate([W / 2, H / 2])
+    .clipAngle(90)
+    .rotate([-78.9, -20.6, 0]);   // [lon, lat] negated for rotate
 
-const globeGroup = new THREE.Group();
-scene.add(globeGroup);
+  var path = d3.geoPath().projection(projection);
+  var graticule = d3.geoGraticule()();
 
-// ---- Sphere: dark ocean with subtle wireframe graticule ----
-const sphereGeo = new THREE.SphereGeometry(1.6, 48, 48);
-const sphereMat = new THREE.MeshPhongMaterial({
-  color: 0x161d33, emissive: 0x0a0f1e, shininess: 12,
-  transparent: true, opacity: 0.96
-});
-globeGroup.add(new THREE.Mesh(sphereGeo, sphereMat));
+  var svg = d3.select('#globe-svg')
+    .attr('viewBox', '0 0 ' + W + ' ' + H);
 
-const gratMat = new THREE.LineBasicMaterial({ color: 0x2a3355, transparent: true, opacity: 0.5 });
-for (let latDeg = -60; latDeg <= 60; latDeg += 30) {
-  const pts = [];
-  const r = 1.602 * Math.cos(latDeg * Math.PI / 180);
-  const y = 1.602 * Math.sin(latDeg * Math.PI / 180);
-  for (let i = 0; i <= 72; i++) {
-    const a = (i / 72) * Math.PI * 2;
-    pts.push(new THREE.Vector3(r * Math.cos(a), y, r * Math.sin(a)));
-  }
-  globeGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gratMat));
-}
-for (let lonDeg = 0; lonDeg < 180; lonDeg += 30) {
-  const pts = [];
-  for (let i = 0; i <= 72; i++) {
-    const a = (i / 72) * Math.PI * 2;
-    const v = latLonToVec(90 - (i / 72) * 180, lonDeg, 1.602);
-    pts.push(v);
-  }
-  // full meridian circle: go down one side, up the other
-  const pts2 = [];
-  for (let i = 0; i <= 144; i++) {
-    const lat = 90 - (i / 144) * 360;
-    const normLat = lat < -90 ? -180 - lat : lat;
-    const lon = lat < -90 ? lonDeg + 180 : lonDeg;
-    pts2.push(latLonToVec(normLat, lon, 1.602));
-  }
-  globeGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts2), gratMat));
-}
+  // Sphere (ocean)
+  svg.append('path')
+    .datum({{type:'Sphere'}})
+    .attr('class','sphere')
+    .attr('d', path);
 
-function latLonToVec(lat, lon, radius) {
-  const phi = (90 - lat) * Math.PI / 180;
-  const theta = (lon + 180) * Math.PI / 180;
-  return new THREE.Vector3(
-    -radius * Math.sin(phi) * Math.cos(theta),
-    radius * Math.cos(phi),
-    radius * Math.sin(phi) * Math.sin(theta)
-  );
-}
+  // Graticule (grid lines)
+  svg.append('path')
+    .datum(graticule)
+    .attr('class','graticule')
+    .attr('d', path);
 
-// ---- Origin marker: India, brass pulse ----
-const originPos = latLonToVec(ORIGIN.lat, ORIGIN.lon, 1.62);
-const originMarker = new THREE.Mesh(
-  new THREE.SphereGeometry(0.045, 16, 16),
-  new THREE.MeshBasicMaterial({ color: 0xE3A857 })
-);
-originMarker.position.copy(originPos);
-globeGroup.add(originMarker);
+  // Country fills + borders from Natural Earth TopoJSON
+  fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
+    .then(function(r) {{ return r.json(); }})
+    .then(function(world) {{
+      var countries = topojson.feature(world, world.objects.countries);
+      var borders   = topojson.mesh(world, world.objects.countries,
+                        function(a,b) {{ return a !== b; }});
 
-const originHalo = new THREE.Mesh(
-  new THREE.RingGeometry(0.06, 0.085, 32),
-  new THREE.MeshBasicMaterial({ color: 0xE3A857, transparent: true, opacity: 0.6, side: THREE.DoubleSide })
-);
-originHalo.position.copy(originPos);
-originHalo.lookAt(originPos.clone().multiplyScalar(2));
-globeGroup.add(originHalo);
+      svg.insert('g', '.graticule + *')
+        .selectAll('path')
+        .data(countries.features)
+        .join('path')
+        .attr('class', 'country')
+        .attr('d', path);
 
-// ---- Destination markers + arcs ----
-const arcData = [];
-MARKETS.forEach(m => {
-  const destPos = latLonToVec(m.lat, m.lon, 1.62);
-  const size = 0.03 + (m.score / 100) * 0.05;
-  const marker = new THREE.Mesh(
-    new THREE.SphereGeometry(size, 16, 16),
-    new THREE.MeshBasicMaterial({ color: new THREE.Color(m.color) })
-  );
-  marker.position.copy(destPos);
-  globeGroup.add(marker);
+      svg.append('path')
+        .datum(borders)
+        .attr('class','border')
+        .attr('d', path);
 
-  // Great-circle-ish arc via quadratic-lifted midpoint
-  const mid = originPos.clone().add(destPos).multiplyScalar(0.5);
-  const lift = 1.62 + originPos.distanceTo(destPos) * 0.35;
-  mid.normalize().multiplyScalar(lift);
-  const curve = new THREE.QuadraticBezierCurve3(originPos, mid, destPos);
-  const pts = curve.getPoints(60);
-  const arcGeo = new THREE.BufferGeometry().setFromPoints(pts);
-  const arcMat = new THREE.LineBasicMaterial({
-    color: new THREE.Color(m.color), transparent: true, opacity: 0.75
-  });
-  globeGroup.add(new THREE.Line(arcGeo, arcMat));
+      // Re-render on rotation
+      function redraw() {{
+        svg.selectAll('.sphere,.graticule,.country,.border')
+           .each(function(d) {{ d3.select(this).attr('d', path(d || this.__data__)); }});
+        svg.selectAll('.sphere').attr('d', path({{type:'Sphere'}}));
+        svg.selectAll('.graticule').attr('d', path(graticule));
+        svg.selectAll('.country').attr('d', path);
+        svg.selectAll('.border').attr('d', path);
+        updateMarkers();
+        updateArcs();
+      }}
 
-  // Moving pulse dot along the arc
-  const pulse = new THREE.Mesh(
-    new THREE.SphereGeometry(0.022, 8, 8),
-    new THREE.MeshBasicMaterial({ color: new THREE.Color(m.color) })
-  );
-  globeGroup.add(pulse);
-  arcData.push({ curve: curve, pulse: pulse, offset: Math.random() });
-});
+      addInteraction(projection, redraw, W, H);
+      addMarkersAndArcs(svg, projection, path, redraw);
+    }})
+    .catch(function() {{
+      // Countries failed to load -- still show sphere + markers
+      addInteraction(projection, function() {{
+        svg.selectAll('.sphere').attr('d', path({{type:'Sphere'}}));
+        svg.selectAll('.graticule').attr('d', path(graticule));
+        updateMarkers();
+        updateArcs();
+      }}, W, H);
+      addMarkersAndArcs(svg, projection, path, function() {{}});
+    }});
 
-// ---- Lights ----
-scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-const key = new THREE.DirectionalLight(0x3fb8af, 0.5);
-key.position.set(4, 3, 5);
-scene.add(key);
-const rim = new THREE.DirectionalLight(0xe3a857, 0.35);
-rim.position.set(-4, -1, -3);
-scene.add(rim);
+  var _updateMarkers, _updateArcs;
 
-// ---- Interaction: drag to rotate, scroll to zoom ----
-let isDragging = false, prevX = 0, prevY = 0;
-let rotY = -1.2, rotX = 0.25;   // start centered roughly on India
-let targetRotY = rotY, targetRotX = rotX;
-let autoSpin = true;
+  function updateMarkers() {{ if (_updateMarkers) _updateMarkers(); }}
+  function updateArcs()    {{ if (_updateArcs)    _updateArcs();    }}
 
-renderer.domElement.addEventListener('mousedown', e => {
-  isDragging = true; autoSpin = false; prevX = e.clientX; prevY = e.clientY;
-});
-window.addEventListener('mouseup', () => { isDragging = false; });
-window.addEventListener('mousemove', e => {
-  if (!isDragging) return;
-  targetRotY += (e.clientX - prevX) * 0.005;
-  targetRotX += (e.clientY - prevY) * 0.003;
-  targetRotX = Math.max(-1.2, Math.min(1.2, targetRotX));
-  prevX = e.clientX; prevY = e.clientY;
-});
-renderer.domElement.addEventListener('wheel', e => {
-  e.preventDefault();
-  camera.position.multiplyScalar(1 + Math.sign(e.deltaY) * 0.06);
-  const d = camera.position.length();
-  if (d < 2.6) camera.position.setLength(2.6);
-  if (d > 8) camera.position.setLength(8);
-}, { passive: false });
+  function addMarkersAndArcs(svg, projection, path, redraw) {{
 
-// Touch support
-renderer.domElement.addEventListener('touchstart', e => {
-  if (e.touches.length === 1) {
-    isDragging = true; autoSpin = false;
-    prevX = e.touches[0].clientX; prevY = e.touches[0].clientY;
-  }
-}, { passive: true });
-window.addEventListener('touchend', () => { isDragging = false; }, { passive: true });
-window.addEventListener('touchmove', e => {
-  if (!isDragging || e.touches.length !== 1) return;
-  targetRotY += (e.touches[0].clientX - prevX) * 0.005;
-  targetRotX += (e.touches[0].clientY - prevY) * 0.003;
-  targetRotX = Math.max(-1.2, Math.min(1.2, targetRotX));
-  prevX = e.touches[0].clientX; prevY = e.touches[0].clientY;
-}, { passive: true });
+    // --- Arcs (great circles) ---
+    var arcGroup = svg.append('g').attr('class','arc-group');
 
-// ---- Animate ----
-const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-let t = 0;
-function animate() {
-  requestAnimationFrame(animate);
-  t += 0.008;
+    MARKETS.forEach(function(m, i) {{
+      var arcData = {{
+        type: 'Feature',
+        geometry: {{
+          type: 'LineString',
+          coordinates: [
+            [ORIGIN.lon, ORIGIN.lat],
+            [m.lon, m.lat]
+          ]
+        }}
+      }};
 
-  if (autoSpin && !reduceMotion) targetRotY += 0.0012;
-  rotY += (targetRotY - rotY) * 0.08;
-  rotX += (targetRotX - rotX) * 0.08;
-  globeGroup.rotation.y = rotY;
-  globeGroup.rotation.x = rotX;
+      var arcEl = arcGroup.append('path')
+        .datum(arcData)
+        .attr('class', 'arc')
+        .attr('id', 'arc-' + m.code)
+        .attr('stroke', m.color)
+        .attr('d', path);
 
-  if (!reduceMotion) {
-    const s = 1 + Math.sin(t * 3) * 0.25;
-    originHalo.scale.set(s, s, s);
-    arcData.forEach(a => {
-      const p = a.curve.getPoint((t * 0.35 + a.offset) % 1);
-      a.pulse.position.copy(p);
-    });
-  }
+      // Animate arc drawing with a stagger
+      setTimeout(function() {{
+        var totalLen = arcEl.node().getTotalLength() || 800;
+        arcEl
+          .attr('stroke-dasharray', totalLen + ' ' + totalLen)
+          .attr('stroke-dashoffset', totalLen)
+          .style('opacity', 0.75)
+          .transition()
+          .duration(1400)
+          .ease(d3.easeCubicInOut)
+          .attr('stroke-dashoffset', 0);
+      }}, 300 + i * 180);
+    }});
 
-  renderer.render(scene, camera);
-}
-animate();
+    _updateArcs = function() {{
+      arcGroup.selectAll('path').each(function(d) {{
+        d3.select(this).attr('d', path(d));
+      }});
+    }};
 
-window.addEventListener('resize', () => {
-  camera.aspect = wrap.clientWidth / wrap.clientHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(wrap.clientWidth, wrap.clientHeight);
-});
+    // --- Destination markers ---
+    var markerGroup = svg.append('g').attr('class','marker-group');
+    var tooltip = document.getElementById('tooltip');
 
-}
+    // Origin marker (India)
+    var originEl = markerGroup.append('g').attr('class','origin-g');
+    originEl.append('circle').attr('class','origin-ring').attr('r', 12).attr('stroke','#E3A857');
+    originEl.append('circle').attr('class','origin-marker').attr('r', 6);
+
+    // Pulsing ring animation on origin
+    function pulseOrigin() {{
+      originEl.select('.origin-ring')
+        .attr('r', 6).style('opacity', 0.8)
+        .transition().duration(1600)
+        .attr('r', 18).style('opacity', 0)
+        .on('end', pulseOrigin);
+    }}
+    pulseOrigin();
+
+    // Destination markers
+    var destGs = markerGroup.selectAll('.dest-g')
+      .data(MARKETS)
+      .join('g')
+      .attr('class','dest-g')
+      .style('cursor','pointer');
+
+    destGs.append('circle')
+      .attr('class','dest-ring')
+      .attr('r', function(d) {{ return 5 + (d.score / 100) * 8; }})
+      .attr('stroke', function(d) {{ return d.color; }});
+
+    destGs.append('circle')
+      .attr('class','dest-marker')
+      .attr('r', function(d) {{ return 4 + (d.score / 100) * 5; }})
+      .attr('fill', function(d) {{ return d.color; }});
+
+    destGs.append('text')
+      .attr('class','dest-label')
+      .attr('dy', function(d) {{ return -(6 + (d.score / 100) * 5 + 5); }})
+      .attr('text-anchor','middle')
+      .text(function(d) {{ return d.name; }});
+
+    // Tooltip
+    destGs
+      .on('mouseover', function(event, d) {{
+        var lvl = d.score >= 60 ? 'Strong opportunity' : d.score >= 30 ? 'Moderate opportunity' : 'Weak opportunity';
+        var cls = d.score >= 60 ? 'tt-strong' : d.score >= 30 ? 'tt-mod' : 'tt-weak';
+        tooltip.querySelector('.tt-country').textContent = d.name;
+        tooltip.querySelector('.tt-score').textContent = d.score + ' / 100';
+        tooltip.querySelector('.tt-score').className = 'tt-score ' + cls;
+        tooltip.querySelector('.tt-label').textContent = lvl;
+        tooltip.style.opacity = '1';
+      }})
+      .on('mousemove', function(event) {{
+        var x = event.pageX + 14, y = event.pageY - 10;
+        tooltip.style.left = x + 'px';
+        tooltip.style.top  = y + 'px';
+      }})
+      .on('mouseout', function() {{
+        tooltip.style.opacity = '0';
+      }});
+
+    function placeMarkers() {{
+      // Origin
+      var op = projection([ORIGIN.lon, ORIGIN.lat]);
+      var vis = op !== null;
+      originEl.attr('transform', vis ? 'translate(' + op[0] + ',' + op[1] + ')' : 'translate(-9999,-9999)');
+
+      // India label
+      svg.selectAll('.india-label').remove();
+      if (vis) {{
+        svg.append('text').attr('class','india-label')
+          .attr('x', op[0]).attr('y', op[1] - 14)
+          .attr('text-anchor','middle')
+          .text('India');
+      }}
+
+      // Destinations
+      destGs.each(function(d) {{
+        var p = projection([d.lon, d.lat]);
+        var v = p !== null;
+        d3.select(this).attr('transform', v ? 'translate(' + p[0] + ',' + p[1] + ')' : 'translate(-9999,-9999)');
+      }});
+    }}
+
+    _updateMarkers = placeMarkers;
+    placeMarkers();
+  }}
+
+  function addInteraction(projection, redraw, W, H) {{
+    var drag = d3.drag()
+      .on('start', function() {{ d3.select('svg').style('cursor','grabbing'); }})
+      .on('drag', function(event) {{
+        var rot = projection.rotate();
+        var k = 75 / projection.scale();
+        projection.rotate([rot[0] + event.dx * k, rot[1] - event.dy * k, rot[2]]);
+        redraw();
+      }})
+      .on('end', function() {{ d3.select('svg').style('cursor','grab'); }});
+
+    var zoom = d3.zoom()
+      .scaleExtent([0.5, 4])
+      .on('zoom', function(event) {{
+        var scale = RADIUS * event.transform.k;
+        projection.scale(scale);
+        redraw();
+      }});
+
+    d3.select('svg').call(drag).call(zoom);
+    window.addEventListener('resize', function() {{
+      var W2 = container.clientWidth, H2 = container.clientHeight;
+      svg.attr('viewBox', '0 0 ' + W2 + ' ' + H2);
+      projection.translate([W2/2, H2/2]);
+      redraw();
+    }});
+  }}
+}}
 </script>
 </body>
-</html>
-"""
+</html>"""
+
+

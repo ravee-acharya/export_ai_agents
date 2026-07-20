@@ -46,9 +46,25 @@ def build_graph(provider: str | None = None):
 # ------------------------------------------------------------------
 
 
-def analyze_query(query: str, provider: str | None = None):
+def analyze_query(
+    query: str,
+    provider: str | None = None,
+    conversation_context: str = "",
+    sme_certifications: list | None = None,
+):
+    from orchestrator.token_tracker import token_tracker
+    from orchestrator.llm_provider import _MODELS
+    import os
+    model = _MODELS.get(os.environ.get("EXPORT_AI_LLM", "openrouter"), "unknown")
+    token_tracker.reset(model=model)
     app = build_graph(provider)
-    return app.invoke({"query": query})
+    result = app.invoke({
+        "query": query,
+        "conversation_context": conversation_context,
+        "sme_certifications": sme_certifications or [],
+    })
+    result["token_usage"] = token_tracker.get_summary().to_dict()
+    return result
 
 
 def analyze_structured(
@@ -60,18 +76,25 @@ def analyze_structured(
     has_udyam_registration: bool = True,
     sme_certifications: list[str] | None = None,
     provider: str | None = None,
+    conversation_context: str = "",
 ):
+    from orchestrator.token_tracker import token_tracker
+    from orchestrator.llm_provider import _MODELS
+    import os
+    model = _MODELS.get(os.environ.get("EXPORT_AI_LLM", "openrouter"), "unknown")
+    token_tracker.reset(model=model)
     app = build_graph(provider)
-    return app.invoke(
-        {
-            "sector": sector,
-            "hs_codes": hs_codes,
-            "target_countries": target_countries,
-            "sme_revenue_cr": sme_revenue_cr,
-            "has_udyam_registration": has_udyam_registration,
-            "sme_certifications": sme_certifications or [],
-        }
-    )
+    result = app.invoke({
+        "sector": sector,
+        "hs_codes": hs_codes,
+        "target_countries": target_countries,
+        "sme_revenue_cr": sme_revenue_cr,
+        "has_udyam_registration": has_udyam_registration,
+        "sme_certifications": sme_certifications or [],
+        "conversation_context": conversation_context,
+    })
+    result["token_usage"] = token_tracker.get_summary().to_dict()
+    return result
 
 
 def health_check(provider: str | None = None) -> dict:
