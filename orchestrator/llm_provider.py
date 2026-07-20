@@ -18,6 +18,7 @@ _MODELS = {
     "gemini":     "gemini-2.5-flash",
     "ollama":     "llama3.1",
     "openrouter": "openrouter/auto",
+    "groq":       "llama-3.3-70b-versatile",   # 14,400 free requests/day
 }
 
 
@@ -34,6 +35,8 @@ def get_llm(provider: str | None = None):
         return _ollama()
     elif provider == "openrouter":
         return _openrouter()
+    elif provider == "groq":
+        return _groq()
     else:
         raise ValueError(f"Unknown provider: '{provider}'")
 
@@ -141,6 +144,16 @@ def _openrouter():
         # while still giving enough room for a real summary.
         max_tokens=300,
         default_headers={"HTTP-Referer": "https://exportai.in", "X-Title": "ExportAI"},
+    )
+
+
+def _groq():
+    _require_key("GROQ_API_KEY", "groq")
+    from langchain_groq import ChatGroq
+    return ChatGroq(
+        model_name=_MODELS["groq"],
+        groq_api_key=os.environ["GROQ_API_KEY"],
+        max_tokens=1000,   # Groq free tier: 14,400 req/day, generous token limits
     )
 
 

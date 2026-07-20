@@ -28,6 +28,8 @@ _PRICING: dict[str, dict[str, float]] = {
     "openrouter/auto":                          {"input": 0.0,    "output": 0.0},
     "meta-llama/llama-3.3-70b-instruct:free":  {"input": 0.0,    "output": 0.0},
     "meta-llama/llama-3.1-8b-instruct:free":   {"input": 0.0,    "output": 0.0},
+    "llama-3.3-70b-versatile":                  {"input": 0.0,    "output": 0.0},  # Groq free tier
+    "groq":                                     {"input": 0.0,    "output": 0.0},
 }
 
 
