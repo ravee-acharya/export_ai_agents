@@ -20,12 +20,12 @@ def render_sidebar():
         provider = st.selectbox(
             "LLM Provider",
             [
-                "openrouter",
                 "anthropic",
+		"openrouter",
                 "gemini",
                 "ollama",
             ],
-            index=0,  # openrouter is now the default
+            index=0,  # anthropic is now the default
         )
 
         debug = st.checkbox(
