@@ -1,28 +1,17 @@
-Return ONLY valid JSON.
+You must respond with ONLY a JSON object. No explanation, no preamble, no markdown, no code fences. Just the raw JSON object starting with { and ending with }.
 {context_block}
-Schema:
+JSON schema to follow exactly:
 
-{{
-    "sector":"",
-    "target_countries":[],
-    "hs_codes":[],
-    "sme_revenue_cr":null,
-    "relevant_agents":[]
-}}
+{{"sector":"","target_countries":[],"hs_codes":[],"sme_revenue_cr":null,"relevant_agents":[]}}
 
-For "relevant_agents", choose only from this exact list of available
-agents based on what the query is actually asking about: {available_agents}
+For "relevant_agents", choose only from: {available_agents}
 
-If the query is a general export opportunity question (not narrowly
-about one topic), include all of them. If it's narrowly about one
-topic (e.g. only asking about government schemes), include only the
-agent(s) that answer that specific question.
+Rules:
+- If the query asks about export opportunities in general, include all agents.
+- If the query is narrow (e.g. only about schemes or only about pricing), include only relevant agents.
+- If the query is a follow-up that does not restate sector or countries, infer them from the prior conversation context above.
+- If no specific countries are mentioned, leave target_countries as an empty array [].
 
-If the current query is a follow-up that doesn't restate sector or
-target countries (e.g. "what about pricing?" or "what certifications
-would I need?"), infer them from the prior conversation context above
-rather than leaving target_countries empty.
+Query: {query}
 
-Query:
-
-{query}
+JSON response:

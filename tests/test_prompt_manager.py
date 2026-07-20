@@ -41,7 +41,7 @@ def test_render_prompt_query_parser():
         available_agents="demand_signal, pricing",
         query="export cotton towels to US",
     )
-    assert "Return ONLY valid JSON" in result
+    assert "ONLY a JSON object" in result
     assert "demand_signal" in result
     assert "export cotton towels" in result
 

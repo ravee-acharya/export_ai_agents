@@ -130,21 +130,49 @@ DEFAULT_HS_CODES = {
 
 
 def _extract_json(text: str) -> dict:
-    text = text.replace("```json", "")
-    text = text.replace("```", "")
-    text = text.strip()
+    """
+    Extract a JSON object from LLM output, handling common failure modes:
+    - Markdown code fences (```json ... ```)
+    - Preamble/postamble prose around the JSON
+    - Nested objects inside the first { ... } block
+    - Partial/truncated JSON from token-limit cutoffs
+    """
+    # Strip markdown fences
+    text = text.replace("```json", "").replace("```", "").strip()
 
+    # Try the whole thing first (ideal case)
     try:
         return json.loads(text)
     except Exception:
         pass
 
+    # Find the outermost { ... } block, accounting for nesting
+    start = text.find("{")
+    if start != -1:
+        depth = 0
+        for i, ch in enumerate(text[start:], start):
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    try:
+                        return json.loads(text[start:i + 1])
+                    except Exception:
+                        break
+
+    # Last resort: regex-based extraction
     match = re.search(r"\{.*\}", text, re.DOTALL)
+    if match:
+        try:
+            return json.loads(match.group(0))
+        except Exception:
+            pass
 
-    if not match:
-        raise ValueError("Unable to extract JSON.")
-
-    return json.loads(match.group(0))
+    raise ValueError(
+        f"Unable to extract JSON from LLM response. "
+        f"Response was: {text[:200]!r}"
+    )
 
 
 def _normalize_sector(sector, query):
@@ -266,7 +294,21 @@ def parse_query(
     except Exception:
         pass
 
-    parsed = _extract_json(response.content)
+    try:
+        parsed = _extract_json(response.content)
+    except ValueError:
+        # LLM returned prose instead of JSON (common with free-tier models
+        # under token pressure). Fall back entirely to keyword-based
+        # parsing of the original query text — the user still gets a
+        # real answer, just without any LLM-extracted structure.
+        sector = _normalize_sector(None, query)
+        return {
+            "sector": sector,
+            "target_countries": [],          # planner will fill defaults
+            "hs_codes": DEFAULT_HS_CODES.get(sector, []),
+            "sme_revenue_cr": None,
+            "agents_to_call": detect_agents_from_query(query),
+        }
 
     sector = _normalize_sector(
         parsed.get("sector"),
