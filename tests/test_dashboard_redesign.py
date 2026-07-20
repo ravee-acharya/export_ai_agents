@@ -4,7 +4,7 @@ the token_usage bug fix in services/export_service.py.
 
 Covers:
 - _score_tier tier boundaries
-- _best_market_per_country aggregation
+- _best_per_country aggregation
 - Comparison chart only renders with 2+ markets
 - Dashboard never crashes on missing/partial data
 - token_usage now actually flows through ExportService's local
@@ -69,50 +69,50 @@ def st_stub():
 def test_score_tier_strong(st_stub):
     from ui.dashboard import _score_tier
     label, color, emoji = _score_tier(72)
-    assert label == "Strong opportunity"
+    assert label == "Strong"
     assert color == "#3FB8AF"
 
 
 def test_score_tier_moderate(st_stub):
     from ui.dashboard import _score_tier
     label, _, _ = _score_tier(45)
-    assert label == "Worth exploring"
+    assert label == "Moderate"
 
 
 def test_score_tier_weak(st_stub):
     from ui.dashboard import _score_tier
     label, _, _ = _score_tier(15)
-    assert label == "Weak opportunity"
+    assert label == "Weak"
 
 
 def test_score_tier_boundaries(st_stub):
     from ui.dashboard import _score_tier
-    assert _score_tier(60)[0] == "Strong opportunity"
-    assert _score_tier(59.9)[0] == "Worth exploring"
-    assert _score_tier(30)[0] == "Worth exploring"
-    assert _score_tier(29.9)[0] == "Weak opportunity"
+    assert _score_tier(60)[0] == "Strong"
+    assert _score_tier(59.9)[0] == "Moderate"
+    assert _score_tier(30)[0] == "Moderate"
+    assert _score_tier(29.9)[0] == "Weak"
 
 
 # ------------------------------------------------------------------
-# _best_market_per_country
+# _best_per_country
 # ------------------------------------------------------------------
 
 def test_best_market_picks_max_score_per_country(st_stub):
-    from ui.dashboard import _best_market_per_country
+    from ui.dashboard import _best_per_country
     scores = [
         {"destination_country": "US", "score": 72.0},
         {"destination_country": "US", "score": 45.0},
         {"destination_country": "AE", "score": 81.0},
     ]
-    best = _best_market_per_country(scores)
+    best = _best_per_country(scores)
     assert best["US"]["score"] == 72.0
     assert best["AE"]["score"] == 81.0
 
 
 def test_best_market_empty_list(st_stub):
-    from ui.dashboard import _best_market_per_country
-    assert _best_market_per_country([]) == {}
-    assert _best_market_per_country(None) == {}
+    from ui.dashboard import _best_per_country
+    assert _best_per_country([]) == {}
+    assert _best_per_country(None) == {}
 
 
 # ------------------------------------------------------------------

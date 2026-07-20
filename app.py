@@ -1,13 +1,15 @@
 import streamlit as st
 
 from services.export_service import ExportService
+from ui.theme import apply_theme
+from ui.background import render_3d_background
 from ui.sidebar import render_sidebar
 from ui.chat import (
     render_chat_history,
     add_user_message,
     add_assistant_message,
 )
-from ui.dashboard import render_dashboard
+from ui.dashboard import render_dashboard, render_token_badge
 from ui.layout import create_layout
 
 
@@ -21,7 +23,12 @@ st.set_page_config(
     layout="wide",
 )
 
-st.title("🌍 ExportAI")
+apply_theme()
+
+st.markdown(
+    '<h1>🌍 Export<span class="brand-accent">AI</span></h1>',
+    unsafe_allow_html=True,
+)
 st.caption("AI-powered Export Intelligence Assistant")
 
 
@@ -40,8 +47,8 @@ left_panel, chat_panel, right_panel = create_layout()
 
 
 # --------------------------------------------------
-# Service — cached in session_state so conversation
-# memory persists across Streamlit reruns
+# Service — cached in session_state so memory
+# persists across Streamlit reruns within a session
 # --------------------------------------------------
 
 if "export_service" not in st.session_state:
@@ -108,3 +115,13 @@ if question:
                 st.subheader("Developer Output")
                 st.json(result)
             render_dashboard(result)
+
+        render_token_badge(result)
+
+
+# --------------------------------------------------
+# 3D Background — always last, never disrupts
+# the content render above
+# --------------------------------------------------
+
+render_3d_background()
