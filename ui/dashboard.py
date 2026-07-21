@@ -445,8 +445,12 @@ def _render_fta_visual(result):
 
     # Duty savings waterfall
     countries = [d["Market"] for d in data]
-    standard  = [float(str(d["Standard Duty"]).replace("%","") or 0) for d in data]
-    preferred = [float(str(d["Your Duty"]).replace("%","") or 0) for d in data]
+    def _safe_pct(val):
+        try: return float(str(val or 0).replace("%", "").strip() or 0)
+        except: return 0.0
+
+    standard  = [_safe_pct(d["Standard Duty"]) for d in data]
+    preferred = [_safe_pct(d["Your Duty"]) for d in data]
 
     fig = _go().Figure()
     fig.add_trace(_go().Bar(name="Standard duty", x=countries, y=standard,
