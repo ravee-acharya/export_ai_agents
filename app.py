@@ -6,13 +6,6 @@ st.set_page_config(
     layout="wide",
 )
 
-# Apply theme safely — if CSS injection fails, app still works
-try:
-    from ui.theme import apply_theme
-    apply_theme()
-except Exception:
-    pass
-
 st.title("🌍 ExportAI")
 st.caption("AI-powered Export Intelligence Assistant")
 
@@ -23,7 +16,6 @@ from ui.layout import create_layout
 from services.export_service import ExportService
 
 provider, debug, certifications = render_sidebar()
-
 left_panel, chat_panel, right_panel = create_layout()
 
 if "export_service" not in st.session_state:
