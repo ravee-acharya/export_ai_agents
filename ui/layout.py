@@ -8,4 +8,5 @@ def create_layout():
         gap="large",
     )
 
-    return left, center, right
+    # Swap: dashboard in center, chat on right
+    return left, right, center
