@@ -2,7 +2,6 @@ import streamlit as st
 
 from services.export_service import ExportService
 from ui.theme import apply_theme
-from ui.background import render_3d_background
 from ui.sidebar import render_sidebar
 from ui.chat import (
     render_chat_history,
@@ -124,4 +123,3 @@ if question:
 # the content render above
 # --------------------------------------------------
 
-render_3d_background()

@@ -43,6 +43,7 @@ def _stub_streamlit():
     components_pkg = types.ModuleType('streamlit.components')
     v1 = types.ModuleType('streamlit.components.v1')
     v1.html = MagicMock()
+    v1.iframe = MagicMock()
     components_pkg.v1 = v1
     st_stub.components = components_pkg
 
