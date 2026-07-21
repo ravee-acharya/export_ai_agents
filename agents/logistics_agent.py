@@ -86,11 +86,11 @@ def run_logistics_agent(
             LogisticsSignal(
                 destination_country=country.upper(),
                 sea_transit_days=data["sea_transit_days"],
-                freight_cost_usd_per_kg=data["freight_cost_usd_per_kg"],
+                freight_cost_usd_per_kg=data.get("freight_cost_usd_per_kg") or data.get("freight_cost_usd_per_kg_sea", 1.0),
                 customs_complexity=data["customs_complexity"],
                 logistics_cost_score=_blended_logistics_cost(
                     data["sea_transit_days"],
-                    data["freight_cost_usd_per_kg"],
+                    data.get("freight_cost_usd_per_kg") or data.get("freight_cost_usd_per_kg_sea", 1.0),
                     data["customs_complexity"],
                 ),
             )
