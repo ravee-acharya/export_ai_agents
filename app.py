@@ -20,6 +20,16 @@ st.set_page_config(
     layout="wide",
 )
 
+# Clear stale widget state on version change to prevent blank page on reboot
+_APP_VERSION = "2.1"
+if st.session_state.get("_app_version") != _APP_VERSION:
+    # Keep export_service but clear widget state that might conflict
+    _svc = st.session_state.get("export_service")
+    st.session_state.clear()
+    if _svc:
+        st.session_state.export_service = _svc
+    st.session_state["_app_version"] = _APP_VERSION
+
 apply_theme()
 st.title("🌍 ExportAI")
 st.caption("AI-powered Export Intelligence Assistant")

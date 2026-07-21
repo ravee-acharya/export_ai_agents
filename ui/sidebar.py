@@ -1,9 +1,5 @@
 import streamlit as st
 
-
-# Common certifications an SME might already hold, offered as quick
-# checkboxes since typing exact standard names is error-prone. "Other"
-# lets them add anything not on this list.
 COMMON_CERTIFICATIONS = [
     "ISO 9001",
     "ISO 14001",
@@ -22,19 +18,15 @@ def render_sidebar():
 
         provider = st.selectbox(
             "LLM Provider",
-            [
-                "groq",
-                "gemini",
-                "anthropic",
-                "openrouter",
-                "ollama",
-            ],
-            index=0,  # groq: free, 14,400 req/day, fast
+            ["groq", "gemini", "anthropic", "openrouter", "ollama"],
+            index=0,
+            key="llm_provider",          # explicit key prevents state conflicts on reboot
         )
 
         debug = st.checkbox(
             "Developer Mode",
             value=False,
+            key="developer_mode",
         )
 
         st.divider()
@@ -47,11 +39,13 @@ def render_sidebar():
         selected = st.multiselect(
             "Certifications you currently hold",
             options=COMMON_CERTIFICATIONS,
+            key="certifications_selected",
         )
 
         other = st.text_input(
             "Other certifications (comma-separated)",
             placeholder="e.g. FSC Chain of Custody, WRAP",
+            key="certifications_other",
         )
 
         other_list = [c.strip() for c in other.split(",") if c.strip()]
