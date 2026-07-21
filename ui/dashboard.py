@@ -522,7 +522,7 @@ def _render_risk_gauges(result):
         fig = _go().Figure(_go().Indicator(
             mode="gauge+number",
             value=score,
-            number={"suffix": "", "font": {"size": 0}},  # hide number, show label
+            number={"suffix": "", "font": {"size": 1, "color": "rgba(0,0,0,0)"}},  # hidden
             title={"text": signal.destination_country,
                    "font": {"size": 14, "color": _TEXT}},
             gauge={
