@@ -405,8 +405,7 @@ def _render_single_forecast(signal):
         ),
         yaxis=dict(
             color=_MIST, gridcolor=_GRID,
-            title="$M USD / month",
-            titlefont=dict(size=10),
+            title=dict(text="$M USD / month", font=dict(size=10, color=_MIST)),
         ),
         showlegend=False,
     )
