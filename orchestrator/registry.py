@@ -35,6 +35,7 @@ from agents.fta_agent import run_fta_agent
 from agents.document_intelligence_agent import run_document_intelligence_agent
 from agents.certification_agent import run_certification_agent
 from agents.rag_agent import run_rag_agent
+from agents.forecast_agent import run_forecast_agent
 
 
 @dataclass(frozen=True)
@@ -160,6 +161,14 @@ def _rag_inputs(state: dict) -> dict:
     }
 
 
+def _forecast_inputs(state: dict) -> dict:
+    return {
+        "sector": state.get("sector", "general"),
+        "hs_codes": state.get("hs_codes", []),
+        "target_countries": state.get("target_countries", []),
+    }
+
+
 INPUT_BUILDERS: dict[str, Callable[[dict], dict]] = {
     "demand_signal": _demand_signal_inputs,
     "scheme_compliance": _scheme_compliance_inputs,
@@ -173,6 +182,7 @@ INPUT_BUILDERS: dict[str, Callable[[dict], dict]] = {
     "document_intelligence": _document_intelligence_inputs,
     "certification": _certification_inputs,
     "rag": _rag_inputs,
+    "forecast": _forecast_inputs,
 }
 
 
@@ -309,6 +319,16 @@ AGENT_REGISTRY: dict[str, AgentSpec] = {
         state_key="rag_output",
         keywords=(),  # always runs by default; retrieval has no exclusive trigger
         default=True,
+    ),
+    "forecast": AgentSpec(
+        name="forecast",
+        display_name="Forecast Agent",
+        run_fn=run_forecast_agent,
+        state_key="forecast_output",
+        keywords=("forecast", "predict", "projection", "next year", "future",
+                  "trend", "3 months", "6 months", "12 months"),
+        exclusive=False,
+        default=True,   # runs alongside demand signal for every opportunity query
     ),
 }
 

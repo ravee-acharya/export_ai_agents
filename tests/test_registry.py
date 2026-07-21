@@ -11,7 +11,7 @@ from orchestrator.registry import (
 )
 
 
-def test_all_twelve_agents_registered():
+def test_all_agents_registered():
     assert set(AGENT_REGISTRY.keys()) == {
         "demand_signal",
         "scheme_compliance",
@@ -25,6 +25,7 @@ def test_all_twelve_agents_registered():
         "document_intelligence",
         "certification",
         "rag",
+        "forecast",
     }
 
 

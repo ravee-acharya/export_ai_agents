@@ -16,6 +16,7 @@ from agents.fta_agent import FTAAgentOutput
 from agents.document_intelligence_agent import DocumentIntelligenceOutput
 from agents.certification_agent import CertificationAgentOutput
 from agents.rag_agent import RAGAgentOutput
+from agents.forecast_agent import ForecastAgentOutput
 
 
 class OpportunityScore(TypedDict):

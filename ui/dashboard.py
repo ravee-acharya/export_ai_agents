@@ -116,6 +116,7 @@ def render_dashboard(result):
 
     with tabs[0]:
         _render_score_cards(best)
+        _render_forecast_chart(result)
         _render_trade_globe_section(result)
 
     with tabs[1]:
@@ -309,6 +310,102 @@ def _render_radar_chart(best):
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
     st.caption("Outer edge = stronger on that dimension")
     st.divider()
+
+
+
+# ─────────────────────────────────────────────────────────────────
+# Forecast chart — 12-month demand projection with confidence band
+# ─────────────────────────────────────────────────────────────────
+
+def _render_forecast_chart(result):
+    forecast_output = result.get("forecast_output")
+    if not forecast_output or not getattr(forecast_output, "signals", None):
+        return
+
+    signals = [s for s in forecast_output.signals if s.monthly_projections]
+    if not signals:
+        return
+
+    st.divider()
+    st.subheader("📈 12-Month Demand Forecast")
+    st.caption(
+        "Linear trend projection from 3 years of UN Comtrade data. "
+        "Shaded band = 80% confidence interval (wider = less certain)."
+    )
+
+    # One chart per market (up to 4), laid out in 2-column grid
+    cols_per_row = 2
+    rows = [signals[i:i+cols_per_row] for i in range(0, min(len(signals), 4), cols_per_row)]
+
+    for row_signals in rows:
+        cols = st.columns(len(row_signals))
+        for col, signal in zip(cols, row_signals):
+            with col:
+                _render_single_forecast(signal)
+
+
+def _render_single_forecast(signal):
+    """Render one forecast line chart with confidence band."""
+    go = _go()
+    projs = signal.monthly_projections
+    months = [p.month for p in projs]
+    projected = [p.projected_value_usd / 1_000_000 for p in projs]  # in $M
+    lower = [p.lower_bound_usd / 1_000_000 for p in projs]
+    upper = [p.upper_bound_usd / 1_000_000 for p in projs]
+
+    conf_colors = {"High": _TEAL, "Moderate": _BRASS, "Low": _CORAL}
+    line_color = conf_colors.get(signal.confidence, _BRASS)
+
+    fig = go.Figure()
+
+    # Confidence band (upper then lower reversed for fill)
+    fig.add_trace(go.Scatter(
+        x=months + months[::-1],
+        y=upper + lower[::-1],
+        fill="toself",
+        fillcolor=line_color.replace("#", "rgba(").replace("AF", "AF,0.12)").replace("57", "57,0.12)").replace("5B", "5B,0.12)"),
+        line=dict(color="rgba(0,0,0,0)"),
+        showlegend=False,
+        hoverinfo="skip",
+    ))
+
+    # Projection line
+    fig.add_trace(go.Scatter(
+        x=months,
+        y=projected,
+        mode="lines+markers",
+        line=dict(color=line_color, width=2.5),
+        marker=dict(size=5, color=line_color),
+        name=f"{signal.destination_country}",
+        hovertemplate="%{x}: $%{y:.2f}M<extra></extra>",
+    ))
+
+    growth_sign = "+" if signal.projected_annual_growth_pct >= 0 else ""
+    title_text = (
+        f"{signal.destination_country} · HS {signal.hs_code}<br>"
+        f"<span style='font-size:11px;color:{_MIST}'>"
+        f"{growth_sign}{signal.projected_annual_growth_pct:.1f}%/yr · "
+        f"{signal.confidence} confidence (R²={signal.r_squared:.2f})</span>"
+    )
+
+    fig.update_layout(
+        title=dict(text=title_text, font=dict(color=_TEXT, size=13)),
+        paper_bgcolor=_BG, plot_bgcolor=_BG,
+        height=220,
+        margin=dict(t=55, b=30, l=10, r=10),
+        xaxis=dict(
+            color=_MIST, gridcolor=_GRID,
+            tickangle=45, tickfont=dict(size=9),
+        ),
+        yaxis=dict(
+            color=_MIST, gridcolor=_GRID,
+            title="$M USD / month",
+            titlefont=dict(size=10),
+        ),
+        showlegend=False,
+    )
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+    st.caption(signal.outlook_label)
 
 
 # ─────────────────────────────────────────────────────────────────

@@ -41,7 +41,7 @@ def test_readiness_returns_agent_count(client):
     assert resp.status_code == 200
     data = resp.json()
     assert data["status"] == "ready"
-    assert data["agents_registered"] == 12
+    assert data["agents_registered"] == 13
     assert data["redis_available"] is False  # mocked as unavailable
 
 
