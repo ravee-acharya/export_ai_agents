@@ -9,11 +9,16 @@ Design principles:
 """
 
 import streamlit as st
-import plotly.graph_objects as go
-import plotly.express as px
 
 from ui.trade_globe import render_trade_globe
 from ui.theme import render_score_ring
+
+# Lazy import — plotly may not be installed on first deploy before
+# requirements.txt is processed. Import inside functions so a missing
+# package gives a graceful degradation, not a blank page.
+def _go():
+    import plotly.graph_objects as go
+    return go
 
 _TEAL  = "#3FB8AF"
 _BRASS = "#E3A857"
@@ -271,12 +276,12 @@ def _render_radar_chart(best):
         "rgba(156,163,191,0.07)",  # mist
         "rgba(192,132,252,0.07)",  # purple
     ]
-    fig = go.Figure()
+    fig = _go().Figure()
 
     for i, (country, row) in enumerate(list(best.items())[:5]):
         vals = _row_values(country, row)
         vals_pct = [v * 100 for v in vals]
-        fig.add_trace(go.Scatterpolar(
+        fig.add_trace(_go().Scatterpolar(
             r=vals_pct + [vals_pct[0]],
             theta=axes + [axes[0]],
             fill="toself",
@@ -376,7 +381,7 @@ def _render_pricing_visual(result):
     col1, col2 = st.columns(2)
 
     with col1:
-        fig = go.Figure(go.Bar(
+        fig = _go().Figure(_go().Bar(
             y=countries, x=margins,
             orientation="h",
             marker_color=[_TEAL if m >= 20 else _BRASS if m >= 10 else _CORAL for m in margins],
@@ -395,7 +400,7 @@ def _render_pricing_visual(result):
         st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
     with col2:
-        fig2 = go.Figure(go.Bar(
+        fig2 = _go().Figure(_go().Bar(
             y=countries, x=fob_prices,
             orientation="h",
             marker_color=_BRASS,
@@ -443,10 +448,10 @@ def _render_fta_visual(result):
     standard  = [float(str(d["Standard Duty"]).replace("%","") or 0) for d in data]
     preferred = [float(str(d["Your Duty"]).replace("%","") or 0) for d in data]
 
-    fig = go.Figure()
-    fig.add_trace(go.Bar(name="Standard duty", x=countries, y=standard,
+    fig = _go().Figure()
+    fig.add_trace(_go().Bar(name="Standard duty", x=countries, y=standard,
                          marker_color=_CORAL, opacity=0.6))
-    fig.add_trace(go.Bar(name="Your actual duty", x=countries, y=preferred,
+    fig.add_trace(_go().Bar(name="Your actual duty", x=countries, y=preferred,
                          marker_color=_TEAL))
     fig.update_layout(
         barmode="overlay",
@@ -510,7 +515,7 @@ def _render_risk_gauges(result):
         score = _risk_to_score.get(signal.risk_level, 50)
         color = _risk_color.get(signal.risk_level, _BRASS)
 
-        fig = go.Figure(go.Indicator(
+        fig = _go().Figure(_go().Indicator(
             mode="gauge+number",
             value=score,
             number={"suffix": "", "font": {"size": 0}},  # hide number, show label
@@ -560,7 +565,7 @@ def _render_readiness_visual(result):
     color = _TEAL if readiness_pct >= 60 else _BRASS if readiness_pct >= 30 else _CORAL
     label = "Well prepared" if readiness_pct >= 60 else "Some gaps" if readiness_pct >= 30 else "Major gaps"
 
-    fig = go.Figure(go.Indicator(
+    fig = _go().Figure(_go().Indicator(
         mode="gauge+number",
         value=readiness_pct,
         number={"suffix": "%", "font": {"size": 28, "color": color}},
@@ -615,7 +620,7 @@ def _render_logistics_visual(result):
         costs.append(float(s.freight_cost_usd_per_kg or 0))
         sizes.append(20)
 
-    fig = go.Figure(go.Scatter(
+    fig = _go().Figure(_go().Scatter(
         x=days, y=costs,
         mode="markers+text",
         text=countries,
@@ -669,12 +674,12 @@ def _render_documents_visual(result):
     if not names:
         return
 
-    fig = go.Figure()
-    fig.add_trace(go.Bar(
+    fig = _go().Figure()
+    fig.add_trace(_go().Bar(
         name="Min cost", y=names, x=cost_los, orientation="h",
         marker_color=_BRASS, opacity=0.6,
     ))
-    fig.add_trace(go.Bar(
+    fig.add_trace(_go().Bar(
         name="Max cost", y=names, x=cost_his, orientation="h",
         marker_color=_BRASS, opacity=0.9,
     ))
@@ -758,7 +763,7 @@ def _render_competitors_visual(result):
         values = comp_shares + [india_share, other_share]
         colors_pie = [_CORAL] * len(competitors) + [_TEAL, _MIST]
 
-        fig = go.Figure(go.Pie(
+        fig = _go().Figure(_go().Pie(
             labels=labels, values=values,
             marker=dict(colors=colors_pie,
                         line=dict(color="#0D1220", width=2)),
