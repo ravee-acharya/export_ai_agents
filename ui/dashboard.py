@@ -354,7 +354,13 @@ def _render_single_forecast(signal):
     upper = [p.upper_bound_usd / 1_000_000 for p in projs]
 
     conf_colors = {"High": _TEAL, "Moderate": _BRASS, "Low": _CORAL}
+    _fill_rgba = {
+        "High":     "rgba(63,184,175,0.12)",
+        "Moderate": "rgba(227,168,87,0.12)",
+        "Low":      "rgba(226,114,91,0.12)",
+    }
     line_color = conf_colors.get(signal.confidence, _BRASS)
+    fill_color = _fill_rgba.get(signal.confidence, "rgba(227,168,87,0.12)")
 
     fig = go.Figure()
 
@@ -363,7 +369,7 @@ def _render_single_forecast(signal):
         x=months + months[::-1],
         y=upper + lower[::-1],
         fill="toself",
-        fillcolor=line_color.replace("#", "rgba(").replace("AF", "AF,0.12)").replace("57", "57,0.12)").replace("5B", "5B,0.12)"),
+        fillcolor=fill_color,
         line=dict(color="rgba(0,0,0,0)"),
         showlegend=False,
         hoverinfo="skip",
