@@ -74,5 +74,11 @@ if question:
             if debug:
                 st.subheader("Developer Output")
                 st.json(result)
-            render_dashboard(result)
-        render_token_badge(result)
+            try:
+                render_dashboard(result)
+            except Exception as _dash_err:
+                st.error(f"Dashboard error: {_dash_err}")
+        try:
+            render_token_badge(result)
+        except Exception:
+            pass
