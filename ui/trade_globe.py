@@ -12,7 +12,7 @@ world map rendered using:
 """
 
 import json
-import streamlit.components.v1 as components
+import streamlit as _st_globe
 
 _COUNTRY_COORDS = {
     "IN": (20.6, 78.9),
@@ -85,7 +85,11 @@ def render_trade_globe(opportunity_scores: list[dict], height: int = 500) -> Non
     }
 
     html = _build_html(markets, origin)
-    components.html(html, height=height)
+    # Wrap in a fixed-height div since st.html auto-sizes
+    _st_globe.html(
+        f'<div style="height:{height}px;overflow:hidden;">' + html + '</div>',
+        unsafe_allow_javascript=True,
+    )
 
 
 def _build_html(markets, origin) -> str:

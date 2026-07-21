@@ -16,7 +16,6 @@ How it works:
 """
 
 import streamlit as st
-import streamlit.components.v1 as components
 
 # Injected into window.parent (the real Streamlit page) via srcdoc iframe
 _CSS_FOR_PARENT = """
@@ -51,7 +50,7 @@ _HTML = """
 <script>
 (function() {
   // Double-injection guard: safe to call on every Streamlit rerun
-  var doc = window.parent.document;
+  var doc = document;
   if (doc.getElementById('exportai-bg')) return;
 
   // 1. Inject CSS into parent page
@@ -67,7 +66,7 @@ _HTML = """
   // 3. Load Three.js into parent window, then animate
   var script = doc.createElement('script');
   script.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
-  script.onload = function() { startScene(window.parent.THREE, doc, canvas); };
+  script.onload = function() { startScene(window.THREE, doc, canvas); };
   script.onerror = function() {
     // CDN unreachable — remove canvas, app still works perfectly
     var c = doc.getElementById('exportai-bg');
@@ -77,7 +76,7 @@ _HTML = """
 
   function startScene(THREE, doc, canvas) {
     if (!THREE) return;
-    var win = window.parent;
+    var win = window;
     var reduceMotion = win.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     var renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
@@ -193,17 +192,7 @@ _BOOTSTRAP = _HTML.replace('`CSS_PLACEHOLDER`', _CSS_FOR_PARENT.replace('`', r'\
 def render_3d_background() -> None:
     """
     Inject the 3D particle background. Call at the end of app.py.
-    Works on all Streamlit versions — uses components.v1.html which
-    has been stable since Streamlit 0.x, not the newer st.html API.
+    Uses st.html(unsafe_allow_javascript=True) -- the correct modern
+    API in Streamlit 1.42+. components.v1.html was removed in 2026.
     """
-    # Collapse the iframe's layout contribution to zero via CSS
-    st.markdown(
-        "<style>"
-        "iframe.stIFrame[height='0'], "
-        "iframe.stIFrame[height='1'] { "
-        "  display: none !important; "
-        "}"
-        "</style>",
-        unsafe_allow_html=True,
-    )
-    components.html(_BOOTSTRAP, height=1)
+    st.html(_BOOTSTRAP, unsafe_allow_javascript=True)

@@ -25,7 +25,7 @@ import pytest
 def _stub_streamlit():
     st_stub = types.ModuleType('streamlit')
     for name in ['subheader', 'markdown', 'write', 'caption', 'success',
-                'warning', 'error', 'info', 'divider', 'metric']:
+                'warning', 'error', 'info', 'divider', 'metric', 'html']:
         setattr(st_stub, name, MagicMock())
 
     class FakeExpander:
