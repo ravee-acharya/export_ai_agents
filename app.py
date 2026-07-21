@@ -28,10 +28,10 @@ if service.provider != provider:
     service.graph = None
 
 with chat_panel:
-    render_chat_history()
+    question = st.chat_input("Ask about export opportunities...")
 
 with chat_panel:
-    question = st.chat_input("Ask about export opportunities...")
+    render_chat_history()
 
 if question:
     add_user_message(question)

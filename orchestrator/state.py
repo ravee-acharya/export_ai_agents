@@ -118,6 +118,10 @@ class OrchestratorState(TypedDict, total=False):
         RAGAgentOutput
     ]
 
+    forecast_output: Optional[
+        ForecastAgentOutput
+    ]
+
     # -----------------------
     # Final Output
     # -----------------------

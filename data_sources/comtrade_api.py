@@ -237,11 +237,22 @@ def _mock_fallback(
         })
         volume *= (1 + growth_rate_pct / 100) ** (1 / 6)
 
+    # Generate 3 years of annual volumes for the forecast agent
+    annual_base = base * 12
+    annual_volumes = [
+        {"year": "2022", "value_usd": round(annual_base / (1 + growth_rate_pct / 100) ** 2, 2)},
+        {"year": "2023", "value_usd": round(annual_base / (1 + growth_rate_pct / 100), 2)},
+        {"year": "2024", "value_usd": round(annual_base, 2)},
+    ]
+
     result = {
         "hs_code": hs_code,
         "destination_country": destination_country,
         "sector": sector,
         "monthly_volumes": monthly_volumes,
+        "annual_volumes": annual_volumes,
+        "latest_annual_value_usd": round(annual_base, 2),
+        "growth_rate_pct": round(growth_rate_pct, 2),
         "active_indian_suppliers": random.randint(2, 15),
         "data_source": f"mock_fallback — {error}" if error else "mock_fallback",
         "as_of": datetime.now().strftime("%Y-%m-%d"),
