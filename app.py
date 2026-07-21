@@ -2,6 +2,10 @@ import streamlit as st
 
 from services.export_service import ExportService
 from ui.sidebar import render_sidebar
+try:
+    from ui.theme import apply_theme
+except Exception:
+    apply_theme = lambda: None
 from ui.chat import (
     render_chat_history,
     add_user_message,
@@ -16,6 +20,7 @@ st.set_page_config(
     layout="wide",
 )
 
+apply_theme()
 st.title("🌍 ExportAI")
 st.caption("AI-powered Export Intelligence Assistant")
 
