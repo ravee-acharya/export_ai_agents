@@ -39,9 +39,24 @@ _CSS = """
 }
 
 /* ── Base ─────────────────────────────────────────────── */
-html, body, [class*="css"] {
-    font-family: 'Plus Jakarta Sans', sans-serif !important;
+/* Scoped to html/body only -- NEVER a blanket [class*="css"]
+   selector. Streamlit renders icons (chat avatars, button chevrons,
+   expander arrows) via font ligatures: the text "smart_toy" or
+   "arrow_right" IS the icon, rendered as a glyph by a specific icon
+   font. A blanket font-family override on every div/span breaks
+   that ligature and prints the raw icon name as literal text
+   instead of the icon -- this is what was happening before. */
+html, body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
     -webkit-font-smoothing: antialiased;
+}
+
+/* Protect Streamlit's icon font from any font-family override below */
+[data-testid="stIconMaterial"],
+[data-testid*="Icon"],
+.material-icons,
+.material-icons-outlined {
+    font-family: 'Material Symbols Outlined', 'Material Icons' !important;
 }
 
 .stApp {
@@ -71,11 +86,18 @@ html, body, [class*="css"] {
     font-weight: 800 !important;
 }
 
-/* Sidebar selectbox + multiselect */
+/* Sidebar selectbox + multiselect -- explicit text color at every
+   nesting level. Works together with .streamlit/config.toml's
+   base="light" theme rather than fighting Streamlit's dark-mode
+   auto-detection underneath it. */
 [data-testid="stSidebar"] [data-baseweb="select"] > div {
-    background: var(--bg) !important;
+    background: var(--card) !important;
     border-color: var(--line) !important;
     border-radius: 10px !important;
+}
+
+[data-testid="stSidebar"] [data-baseweb="select"] * {
+    color: var(--ink) !important;
 }
 
 /* ── Main content ─────────────────────────────────────── */
@@ -94,9 +116,9 @@ h1 { font-weight: 800 !important; font-size: 1.6rem !important; }
 h2 { font-weight: 800 !important; font-size: 1.15rem !important; }
 h3 { font-weight: 700 !important; font-size: 1rem !important; }
 
-p, li, span, div {
+p, li, span:not([data-testid*="Icon"]), div:not([data-testid*="Icon"]) {
     color: var(--ink);
-    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
 /* ── Cards (st.container with border) ────────────────── */

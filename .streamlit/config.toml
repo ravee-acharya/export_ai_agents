@@ -1,0 +1,14 @@
+# Forces Streamlit's native widget theme to match the Export Trading
+# Terminal design, regardless of the visitor's OS/browser dark-mode
+# setting. Without this, Streamlit auto-detects dark mode and renders
+# native widgets (selectbox, buttons, sliders) with its own dark
+# palette underneath our custom CSS -- causing unreadable dark-on-dark
+# text in places our CSS doesn't reach (e.g. the sidebar provider
+# dropdown).
+[theme]
+base = "light"
+primaryColor = "#0e7a6b"
+backgroundColor = "#f4f1ea"
+secondaryBackgroundColor = "#ffffff"
+textColor = "#221f1a"
+font = "sans serif"
