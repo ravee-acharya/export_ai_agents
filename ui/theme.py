@@ -1,233 +1,348 @@
 """
-ExportAI visual theme.
+ExportAI visual theme — implements the Export Trading Terminal design.
 
-One place for the app's entire look: a maritime-trade palette (deep
-harbor navy, brass, teal), glass-panel cards, and depth cues (layered
-shadows, subtle borders, hover lift). Injected once from app.py via
-apply_theme(); no other module needs to know CSS exists.
+Design tokens from the approved design:
+  bg        #f4f1ea  warm cream background
+  card      #ffffff  white cards
+  ink       #221f1a  near-black text
+  sub       #6d675c  secondary text
+  faint     #a29b8c  tertiary / placeholders
+  line      #e7e0d3  borders and dividers
+  brand     #0e7a6b  teal brand primary
+  brandsoft #e3f1ee  teal background tint
+  go        #2f9e6e  positive / green
+  warn      #d68a2b  amber / moderate
+  weak      #d15b4a  red / negative
 
-Streamlit constraint worth knowing: Streamlit renders its own DOM and
-only exposes styling through injected CSS targeting its generated
-class names / data-testids. Those identifiers are stable across minor
-versions but CAN change on major Streamlit upgrades -- if styling
-breaks after an upgrade, this file is the only place to fix.
+Font: Plus Jakarta Sans (Google Fonts, loaded via @import)
 """
 
 import streamlit as st
 
-_THEME_CSS = """
-<style>
-/* ============ PALETTE ============
-   harbor navy  #0D1220  (app background)
-   panel navy   #161D33  (cards)
-   brass        #E3A857  (primary accent -- headers, highlights)
-   teal         #3FB8AF  (live data, positive)
-   coral        #E2725B  (risk, warnings)
-   parchment    #EDEAE2  (primary text)
-   mist         #9CA3BF  (secondary text)
-*/
 
-/* ---------- App shell ---------- */
-body {
-    background: #0D1220 !important;
+_CSS = """
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+    --bg:        #f4f1ea;
+    --card:      #ffffff;
+    --ink:       #221f1a;
+    --sub:       #6d675c;
+    --faint:     #a29b8c;
+    --line:      #e7e0d3;
+    --brand:     #0e7a6b;
+    --brandsoft: #e3f1ee;
+    --go:        #2f9e6e;
+    --warn:      #d68a2b;
+    --weak:      #d15b4a;
+    --sky:       #eaf1f4;
 }
+
+/* ── Base ─────────────────────────────────────────────── */
+html, body, [class*="css"] {
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    -webkit-font-smoothing: antialiased;
+}
+
 .stApp {
-    background:
-        radial-gradient(ellipse 80% 50% at 10% 0%, rgba(63,184,175,0.05), transparent),
-        radial-gradient(ellipse 60% 40% at 95% 100%, rgba(227,168,87,0.04), transparent),
-        rgba(13,18,32,0.72);
-    color: #EDEAE2;
-    /* No z-index here — setting it would create a stacking context
-       that buries Streamlit's own fixed-position chat input bar */
-    position: relative;
-}
-[data-testid="stHeader"] {
-    background: transparent !important;
-}
-[data-testid="stBottom"] {
-    background: rgba(13,18,32,0.85) !important;
-    backdrop-filter: blur(8px);
-    z-index: 9999 !important;
+    background: var(--bg) !important;
 }
 
-/* ---------- Typography ---------- */
-h1, h2, h3 {
-    font-family: Georgia, 'Times New Roman', serif !important;
-    color: #F6F3EC !important;
-    letter-spacing: 0.2px;
-}
-h1 span.brand-accent { color: #E3A857; }
-
-.stMarkdown, .stMarkdown p, .stCaption, [data-testid="stCaptionContainer"] {
-    color: #C9C6BC;
-}
-
-/* ---------- Glass cards: expanders ---------- */
-[data-testid="stExpander"] {
-    background: rgba(22,29,51,0.82);
-    border: 1px solid rgba(255,255,255,0.09) !important;
-    border-radius: 14px !important;
-    backdrop-filter: blur(6px);
-    box-shadow: 0 4px 24px rgba(0,0,0,0.35);
-    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
-    margin-bottom: 10px;
-}
-[data-testid="stExpander"]:hover {
-    transform: translateY(-2px);
-    border-color: rgba(227,168,87,0.45) !important;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(227,168,87,0.2);
-}
-[data-testid="stExpander"] summary {
-    color: #EDEAE2 !important;
-    font-weight: 600;
-}
-
-/* ---------- Metrics ---------- */
-[data-testid="stMetric"] {
-    background: linear-gradient(160deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015));
-    border: 1px solid rgba(255,255,255,0.09);
-    border-radius: 12px;
-    padding: 12px 14px;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 3px 14px rgba(0,0,0,0.3);
-}
-[data-testid="stMetricValue"] {
-    color: #E3A857 !important;
-    font-family: Georgia, serif !important;
-}
-[data-testid="stMetricLabel"] {
-    color: #9CA3BF !important;
-}
-
-/* ---------- Chat ---------- */
-[data-testid="stChatMessage"] {
-    background: rgba(22,29,51,0.85);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 14px;
-    box-shadow: 0 3px 16px rgba(0,0,0,0.3);
-    backdrop-filter: blur(5px);
-}
-[data-testid="stChatInput"] textarea {
-    background: #161D33 !important;
-    color: #EDEAE2 !important;
-    border-radius: 12px !important;
-}
-
-/* ---------- Sidebar ---------- */
+/* ── Sidebar ──────────────────────────────────────────── */
 [data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #10172B 0%, #0D1220 100%);
-    border-right: 1px solid rgba(255,255,255,0.07);
-}
-[data-testid="stSidebar"] .stMarkdown h1,
-[data-testid="stSidebar"] .stMarkdown h2,
-[data-testid="stSidebar"] .stMarkdown h3 {
-    color: #E3A857 !important;
+    background: var(--card) !important;
+    border-right: 1px solid var(--line) !important;
 }
 
-/* ---------- Buttons & inputs ---------- */
-.stButton button, .stDownloadButton button {
-    background: linear-gradient(140deg, #E3A857, #C98D3E);
-    color: #14192C;
-    font-weight: 700;
-    border: none;
-    border-radius: 10px;
-    box-shadow: 0 4px 14px rgba(227,168,87,0.3);
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+[data-testid="stSidebar"] * {
+    color: var(--ink) !important;
 }
-.stButton button:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(227,168,87,0.45);
+
+[data-testid="stSidebar"] label,
+[data-testid="stSidebar"] p {
+    color: var(--sub) !important;
+    font-size: 13px !important;
 }
-.stSelectbox [data-baseweb="select"] > div,
-.stMultiSelect [data-baseweb="select"] > div,
-.stTextInput input {
-    background: #161D33 !important;
-    border-color: rgba(255,255,255,0.12) !important;
-    color: #EDEAE2 !important;
+
+[data-testid="stSidebar"] h1,
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3 {
+    color: var(--ink) !important;
+    font-weight: 800 !important;
+}
+
+/* Sidebar selectbox + multiselect */
+[data-testid="stSidebar"] [data-baseweb="select"] > div {
+    background: var(--bg) !important;
+    border-color: var(--line) !important;
     border-radius: 10px !important;
 }
 
-/* ---------- Alert banners (risk levels etc.) ---------- */
-[data-testid="stAlert"] {
-    border-radius: 12px;
-    border: 1px solid rgba(255,255,255,0.1);
-    backdrop-filter: blur(4px);
+/* ── Main content ─────────────────────────────────────── */
+.main .block-container {
+    padding-top: 1.5rem !important;
+    max-width: 100% !important;
 }
 
-/* ---------- Dividers ---------- */
+h1, h2, h3 {
+    color: var(--ink) !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    letter-spacing: -0.01em !important;
+}
+
+h1 { font-weight: 800 !important; font-size: 1.6rem !important; }
+h2 { font-weight: 800 !important; font-size: 1.15rem !important; }
+h3 { font-weight: 700 !important; font-size: 1rem !important; }
+
+p, li, span, div {
+    color: var(--ink);
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+
+/* ── Cards (st.container with border) ────────────────── */
+[data-testid="stVerticalBlock"] > [data-testid="element-container"] > div {
+    background: var(--card);
+}
+
+/* ── Metrics ─────────────────────────────────────────── */
+[data-testid="stMetric"] {
+    background: var(--card) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 12px !important;
+    padding: 14px 16px !important;
+}
+
+[data-testid="stMetricLabel"] {
+    color: var(--sub) !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+}
+
+[data-testid="stMetricValue"] {
+    color: var(--ink) !important;
+    font-size: 22px !important;
+    font-weight: 800 !important;
+}
+
+/* ── Buttons ─────────────────────────────────────────── */
+.stButton > button {
+    background: var(--brand) !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 10px !important;
+    font-weight: 700 !important;
+    font-size: 13px !important;
+    padding: 10px 18px !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    transition: background 0.15s ease !important;
+}
+
+.stButton > button:hover {
+    background: #0b6558 !important;
+}
+
+/* Download button */
+.stDownloadButton > button {
+    background: var(--brandsoft) !important;
+    color: var(--brand) !important;
+    border: 1px solid var(--brand) !important;
+    border-radius: 10px !important;
+    font-weight: 700 !important;
+    font-size: 13px !important;
+}
+
+/* ── Chat ─────────────────────────────────────────────── */
+[data-testid="stChatInput"] {
+    border-top: 1px solid var(--line) !important;
+    background: var(--card) !important;
+}
+
+[data-testid="stChatInput"] textarea {
+    background: var(--bg) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 10px !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    color: var(--ink) !important;
+    font-size: 13px !important;
+}
+
+[data-testid="stChatInput"] button {
+    background: var(--brand) !important;
+    border-radius: 10px !important;
+}
+
+/* Chat messages */
+[data-testid="stChatMessage"] {
+    background: var(--card) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 14px !important;
+    padding: 12px 14px !important;
+    margin-bottom: 8px !important;
+}
+
+/* User message */
+[data-testid="stChatMessage"][data-testid*="user"] {
+    background: var(--brand) !important;
+    border-color: var(--brand) !important;
+    color: #fff !important;
+}
+
+/* ── Tabs ─────────────────────────────────────────────── */
+[data-testid="stTabs"] [role="tablist"] {
+    border-bottom: 1px solid var(--line) !important;
+    gap: 2px !important;
+}
+
+[data-testid="stTabs"] [role="tab"] {
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-size: 13.5px !important;
+    font-weight: 600 !important;
+    color: var(--sub) !important;
+    border-radius: 9px 9px 0 0 !important;
+    padding: 9px 16px !important;
+    border: none !important;
+    background: transparent !important;
+}
+
+[data-testid="stTabs"] [role="tab"][aria-selected="true"] {
+    color: var(--brand) !important;
+    background: var(--brandsoft) !important;
+    border-bottom: 2px solid var(--brand) !important;
+}
+
+/* ── Expander ─────────────────────────────────────────── */
+[data-testid="stExpander"] {
+    background: var(--card) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 12px !important;
+}
+
+[data-testid="stExpander"] summary {
+    font-weight: 700 !important;
+    color: var(--ink) !important;
+    font-size: 13.5px !important;
+}
+
+/* ── Selectbox ────────────────────────────────────────── */
+[data-baseweb="select"] > div {
+    background: var(--card) !important;
+    border-color: var(--line) !important;
+    border-radius: 10px !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-size: 13px !important;
+    color: var(--ink) !important;
+}
+
+/* ── Text input ───────────────────────────────────────── */
+[data-testid="stTextInput"] input {
+    background: var(--card) !important;
+    border-color: var(--line) !important;
+    border-radius: 10px !important;
+    color: var(--ink) !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-size: 13px !important;
+}
+
+/* ── Checkbox ─────────────────────────────────────────── */
+[data-testid="stCheckbox"] label {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: var(--sub) !important;
+}
+
+/* ── Alerts / banners ─────────────────────────────────── */
+.stSuccess {
+    background: #e8f5ee !important;
+    border-left: 4px solid var(--go) !important;
+    color: #1a5c3a !important;
+    border-radius: 10px !important;
+}
+
+.stWarning {
+    background: #fdf0dc !important;
+    border-left: 4px solid var(--warn) !important;
+    color: #7a4a0e !important;
+    border-radius: 10px !important;
+}
+
+.stError {
+    background: #fce8e4 !important;
+    border-left: 4px solid var(--weak) !important;
+    color: #7a2018 !important;
+    border-radius: 10px !important;
+}
+
+.stInfo {
+    background: var(--sky) !important;
+    border-left: 4px solid var(--brand) !important;
+    color: #0b4a42 !important;
+    border-radius: 10px !important;
+}
+
+/* ── Scrollbar ────────────────────────────────────────── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb {
+    background: var(--line);
+    border-radius: 5px;
+}
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ── Plotly charts ────────────────────────────────────── */
+/* Override dark chart backgrounds to match light theme */
+.js-plotly-plot .plotly .bg { fill: transparent !important; }
+
+/* ── Divider ──────────────────────────────────────────── */
 hr {
-    border-color: rgba(255,255,255,0.08) !important;
+    border-color: var(--line) !important;
+    margin: 16px 0 !important;
 }
 
-/* ---------- Score ring (used in dashboard) ---------- */
-.score-ring-3d {
-    position: relative;
-    width: 110px;
-    height: 110px;
-    margin: 6px auto;
-}
-.score-ring-3d svg { transform: rotate(-90deg); }
-.score-ring-3d .ring-bg { stroke: rgba(255,255,255,0.09); }
-.score-ring-3d .ring-fg {
-    stroke: url(#scoreGradient);
-    stroke-linecap: round;
-    filter: drop-shadow(0 0 6px rgba(63,184,175,0.55));
-    transition: stroke-dashoffset 1s ease;
-}
-.score-ring-3d .ring-value {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-family: Georgia, serif;
-    font-size: 26px;
-    font-weight: 700;
-    color: #F6F3EC;
-}
-.score-ring-3d .ring-value small {
-    font-size: 10px;
-    color: #9CA3BF;
-    font-family: Arial, sans-serif;
-    font-weight: 400;
+/* ── Caption / small text ─────────────────────────────── */
+.stCaption, small, [data-testid="stCaptionContainer"] {
+    color: var(--faint) !important;
+    font-size: 11.5px !important;
 }
 
-/* Respect reduced-motion preferences */
-@media (prefers-reduced-motion: reduce) {
-    [data-testid="stExpander"], .stButton button { transition: none; }
+/* ── Spinner ──────────────────────────────────────────── */
+.stSpinner > div {
+    border-top-color: var(--brand) !important;
 }
-</style>
+
+/* ── Page title bar ───────────────────────────────────── */
+header[data-testid="stHeader"] {
+    background: var(--card) !important;
+    border-bottom: 1px solid var(--line) !important;
+}
 """
 
 
 def apply_theme() -> None:
-    """Inject the global theme CSS. Call once, early, from app.py."""
-    st.markdown(_THEME_CSS, unsafe_allow_html=True)
+    """Inject the Export Trading Terminal design system into the Streamlit app."""
+    st.markdown(f"<style>{_CSS}</style>", unsafe_allow_html=True)
 
 
 def render_score_ring(score: float, label: str = "Score") -> str:
-    """
-    Return HTML for an animated circular score ring (0-100). Rendered
-    via st.markdown(..., unsafe_allow_html=True) by the dashboard.
-    """
-    score = max(0.0, min(100.0, float(score)))
-    circumference = 2 * 3.14159 * 46
-    offset = circumference * (1 - score / 100)
-
+    """Return an SVG ring chart as an HTML string."""
+    _tier_color = (
+        "#2f9e6e" if score >= 60 else
+        "#d68a2b" if score >= 30 else
+        "#d15b4a"
+    )
+    r = 28
+    c = 2 * 3.14159 * r
+    dash = f"{score / 100 * c:.1f} {c:.1f}"
     return f"""
-    <div class="score-ring-3d">
-      <svg width="110" height="110" viewBox="0 0 110 110">
-        <defs>
-          <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#E3A857"/>
-            <stop offset="100%" stop-color="#3FB8AF"/>
-          </linearGradient>
-        </defs>
-        <circle class="ring-bg" cx="55" cy="55" r="46" fill="none" stroke-width="9"/>
-        <circle class="ring-fg" cx="55" cy="55" r="46" fill="none" stroke-width="9"
-                stroke-dasharray="{circumference:.1f}"
-                stroke-dashoffset="{offset:.1f}"/>
-      </svg>
-      <div class="ring-value">{score:.0f}<small>{label}</small></div>
-    </div>
-    """
+<div style="position:relative;width:72px;height:72px;display:inline-block;">
+  <svg width="72" height="72" viewBox="0 0 72 72">
+    <circle cx="36" cy="36" r="{r}" fill="none" stroke="#e7e0d3" stroke-width="7"/>
+    <circle cx="36" cy="36" r="{r}" fill="none" stroke="{_tier_color}"
+            stroke-width="7" stroke-linecap="round"
+            stroke-dasharray="{dash}" transform="rotate(-90 36 36)"/>
+  </svg>
+  <div style="position:absolute;inset:0;display:flex;flex-direction:column;
+              align-items:center;justify-content:center;">
+    <span style="font-size:15px;font-weight:800;color:#221f1a;
+                 font-family:'Plus Jakarta Sans',sans-serif;">{score:.0f}</span>
+    <span style="font-size:9px;color:#a29b8c;">{label}</span>
+  </div>
+</div>"""

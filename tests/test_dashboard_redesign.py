@@ -72,7 +72,7 @@ def test_score_tier_strong(st_stub):
     from ui.dashboard import _score_tier
     label, color, emoji = _score_tier(72)
     assert label == "Strong"
-    assert color == "#3FB8AF"
+    assert color == "#0e7a6b"
 
 
 def test_score_tier_moderate(st_stub):

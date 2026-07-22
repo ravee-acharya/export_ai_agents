@@ -20,13 +20,20 @@ def _go():
     import plotly.graph_objects as go
     return go
 
-_TEAL  = "#3FB8AF"
-_BRASS = "#E3A857"
-_CORAL = "#E2725B"
-_MIST  = "#9CA3BF"
+# Design tokens from Export Trading Terminal (light theme)
+_TEAL  = "#0e7a6b"   # brand teal
+_BRASS = "#d68a2b"   # amber / warn
+_CORAL = "#d15b4a"   # red / weak
+_GO    = "#2f9e6e"   # green / positive
+_INK   = "#221f1a"   # near-black text
+_SUB   = "#6d675c"   # secondary text
+_MIST  = "#a29b8c"   # tertiary / faint
+_LINE  = "#e7e0d3"   # borders
 _BG    = "rgba(0,0,0,0)"
-_GRID  = "rgba(255,255,255,0.07)"
-_TEXT  = "#EDEAE2"
+_CARD  = "#ffffff"
+_GRID  = "#e7e0d3"
+_TEXT  = "#221f1a"
+_SOFT  = "#e3f1ee"   # brand soft tint
 
 
 def _score_tier(score):
@@ -240,45 +247,43 @@ def _render_hero(result, best):
         key=lambda x: x[1], reverse=True,
     )
     others_html = " · ".join(
-        f'<span style="color:{_score_tier(s)[1]}">{c} {s:.0f}</span>'
+        f'<span style="opacity:.8">{c} {s:.0f}</span>'
         for c, s in others[:4]
     )
 
     st.markdown(
-        f"""<div style="background:linear-gradient(135deg,rgba(63,184,175,0.10),
-        rgba(227,168,87,0.06));border:1.5px solid {color};border-radius:16px;
-        padding:18px 22px;margin-bottom:4px;">
-  <div style="font-size:11px;color:{_MIST};text-transform:uppercase;letter-spacing:.6px;">
-    Top Recommendation</div>
-  <div style="font-size:32px;font-weight:700;color:{_TEXT};font-family:Georgia,serif;
-    margin:4px 0 2px;">
-    {emoji} <span style="color:{color}">{top_c}</span>
-    <span style="font-size:16px;font-weight:400;color:{_MIST};">· {top_score:.0f}/100</span>
-  </div>
-  <div style="display:flex;gap:20px;margin:10px 0 8px;flex-wrap:wrap;">
-    <div style="text-align:center;min-width:64px;">
-      <div style="font-size:22px;font-weight:700;color:{_BRASS};font-family:Georgia,serif;">
-        {growth_str}</div>
-      <div style="font-size:10px;color:{_MIST};">demand growth</div>
+        f"""<div style="background:linear-gradient(100deg,#123f38,#0e7a6b);
+            border-radius:16px;padding:20px 24px;color:#fff;margin-bottom:4px;">
+  <div style="font-size:11px;opacity:.7;font-weight:600;letter-spacing:.04em;
+    text-transform:uppercase;margin-bottom:8px;">⭐ Top Pick For You · Ranked from demand, price, shipping &amp; safety</div>
+  <div style="display:flex;gap:28px;flex-wrap:wrap;align-items:center;">
+    <div>
+      <div style="font-size:28px;font-weight:800;letter-spacing:-.01em;">{emoji} {top_c}</div>
+      <div style="font-size:13px;opacity:.75;margin-top:3px;">Score {top_score:.0f} / 100</div>
     </div>
-    <div style="text-align:center;min-width:64px;">
-      <div style="font-size:22px;font-weight:700;color:{_TEAL};font-family:Georgia,serif;">
-        {fob}</div>
-      <div style="font-size:10px;color:{_MIST};">FOB price</div>
-    </div>
-    <div style="text-align:center;min-width:64px;">
-      <div style="font-size:22px;font-weight:700;color:{_TEXT};font-family:Georgia,serif;">
-        {transit}</div>
-      <div style="font-size:10px;color:{_MIST};">sea transit</div>
-    </div>
-    <div style="text-align:center;min-width:64px;">
-      <div style="font-size:22px;font-weight:700;
-        color:{"#E2725B" if risk_lvl in ("High","Severe") else _TEAL};
-        font-family:Georgia,serif;">{risk_lvl}</div>
-      <div style="font-size:10px;color:{_MIST};">country risk</div>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;">
+      <div>
+        <div style="font-size:11px;opacity:.7;">Demand growth</div>
+        <div style="font-size:21px;font-weight:800;color:#6ee7c7;margin-top:2px;">{growth_str}<span style="font-size:11px;opacity:.7;">/yr</span></div>
+      </div>
+      <div>
+        <div style="font-size:11px;opacity:.7;">Selling price</div>
+        <div style="font-size:21px;font-weight:800;margin-top:2px;">{fob}</div>
+        <div style="font-size:10px;opacity:.6;">per unit (FOB)</div>
+      </div>
+      <div>
+        <div style="font-size:11px;opacity:.7;">Ships in</div>
+        <div style="font-size:21px;font-weight:800;margin-top:2px;">{transit}</div>
+        <div style="font-size:10px;opacity:.6;">by sea</div>
+      </div>
+      <div>
+        <div style="font-size:11px;opacity:.7;">Risk</div>
+        <div style="font-size:21px;font-weight:800;margin-top:2px;">{risk_lvl}</div>
+        <div style="font-size:10px;opacity:.6;">country safety</div>
+      </div>
     </div>
   </div>
-  <div style="font-size:11px;color:{_MIST};">
+  <div style="font-size:11px;opacity:.55;margin-top:10px;border-top:1px solid rgba(255,255,255,.15);padding-top:10px;">
     Other markets: {others_html if others_html else "—"}
   </div>
 </div>""",
@@ -345,15 +350,15 @@ def _render_radar_chart(best):
             radialaxis=dict(visible=True, range=[0, 100],
                             gridcolor=_GRID, color=_MIST,
                             tickfont=dict(size=9, color=_MIST)),
-            angularaxis=dict(gridcolor=_GRID, color=_TEXT,
+            angularaxis=dict(gridcolor=_GRID, color=_INK,
                              tickfont=dict(size=12, color=_TEXT)),
         ),
         paper_bgcolor=_BG,
-        legend=dict(font=dict(color=_TEXT, size=12), bgcolor="rgba(0,0,0,0)"),
+        legend=dict(font=dict(color=_INK, size=12), bgcolor="rgba(0,0,0,0)"),
         height=340,
         margin=dict(t=20, b=20, l=40, r=40),
         title=dict(text="Market Comparison Radar",
-                   font=dict(color=_TEXT, size=14, family="Georgia,serif")),
+                   font=dict(color=_INK, size=14, family="Georgia,serif")),
     )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
     st.caption("Outer edge = stronger on that dimension")
@@ -443,7 +448,7 @@ def _render_single_forecast(signal):
     )
 
     fig.update_layout(
-        title=dict(text=title_text, font=dict(color=_TEXT, size=13)),
+        title=dict(text=title_text, font=dict(color=_INK, size=13)),
         paper_bgcolor=_BG, plot_bgcolor=_BG,
         height=220,
         margin=dict(t=55, b=30, l=10, r=10),
@@ -481,15 +486,24 @@ def _render_score_cards(best):
         except: growth = "—"
 
         with cols[i]:
+            tier_colors = {"Strong": "#2f9e6e", "Moderate": "#d68a2b", "Weak": "#d15b4a"}
+            tier_soft   = {"Strong": "#e8f5ee", "Moderate": "#fdf0dc", "Weak": "#fce8e4"}
+            tc = tier_colors.get(label, _TEAL)
+            ts = tier_soft.get(label, _SOFT)
             st.markdown(
-                f"""<div style="background:rgba(255,255,255,0.04);border:1px solid {color}55;
-                border-radius:12px;padding:14px;text-align:center;height:160px;
-                display:flex;flex-direction:column;justify-content:space-between;">
-  <div style="font-size:26px;font-weight:700;color:{color};font-family:Georgia,serif;">
-    {score:.0f}</div>
-  <div style="font-size:18px;font-weight:700;color:{_TEXT};">{country}</div>
-  <div style="font-size:11px;color:{_MIST};">{emoji} {label}</div>
-  <div style="font-size:12px;color:{_BRASS};">↑ {growth} demand</div>
+                f"""<div style="background:#fff;border:1px solid #e7e0d3;
+                border-radius:14px;padding:18px;box-shadow:0 1px 3px rgba(40,30,10,.04);">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+    <div style="font-size:18px;font-weight:800;color:#221f1a;">{country}</div>
+    <span style="font-size:10px;font-weight:700;color:{tc};background:{ts};
+      padding:4px 9px;border-radius:20px;">{emoji} {label}</span>
+  </div>
+  <div style="font-size:32px;font-weight:800;color:{tc};letter-spacing:-.01em;">{score:.0f}</div>
+  <div style="font-size:11px;color:#a29b8c;margin-top:2px;">/ 100 opportunity score</div>
+  <div style="height:6px;background:#f1ebde;border-radius:4px;overflow:hidden;margin-top:10px;">
+    <div style="width:{score}%;height:100%;background:{tc};border-radius:4px;"></div>
+  </div>
+  <div style="font-size:12px;color:#2f9e6e;font-weight:600;margin-top:8px;">↑ {growth} demand growth</div>
 </div>""",
                 unsafe_allow_html=True,
             )
@@ -537,11 +551,11 @@ def _render_pricing_visual(result):
             marker_color=[_TEAL if m >= 20 else _BRASS if m >= 10 else _CORAL for m in margins],
             text=[f"{m:.0f}%" for m in margins],
             textposition="outside",
-            textfont=dict(color=_TEXT),
+            textfont=dict(color=_INK),
             hovertemplate="%{y}: %{x:.0f}% margin<extra></extra>",
         ))
         fig.update_layout(
-            title=dict(text="Expected Margin %", font=dict(color=_TEXT, size=13)),
+            title=dict(text="Expected Margin %", font=dict(color=_INK, size=13)),
             paper_bgcolor=_BG, plot_bgcolor=_BG, height=220,
             margin=dict(t=40, b=10, l=10, r=60),
             xaxis=dict(color=_MIST, gridcolor=_GRID),
@@ -556,11 +570,11 @@ def _render_pricing_visual(result):
             marker_color=_BRASS,
             text=[f"${v:.0f}" for v in fob_prices],
             textposition="outside",
-            textfont=dict(color=_TEXT),
+            textfont=dict(color=_INK),
             hovertemplate="%{y}: $%{x:.0f} FOB<extra></extra>",
         ))
         fig2.update_layout(
-            title=dict(text="Recommended FOB Price ($)", font=dict(color=_TEXT, size=13)),
+            title=dict(text="Recommended FOB Price ($)", font=dict(color=_INK, size=13)),
             paper_bgcolor=_BG, plot_bgcolor=_BG, height=220,
             margin=dict(t=40, b=10, l=10, r=60),
             xaxis=dict(color=_MIST, gridcolor=_GRID),
@@ -609,12 +623,12 @@ def _render_fta_visual(result):
                          marker_color=_TEAL))
     fig.update_layout(
         barmode="overlay",
-        title=dict(text="Duty Rate Comparison (%)", font=dict(color=_TEXT, size=13)),
+        title=dict(text="Duty Rate Comparison (%)", font=dict(color=_INK, size=13)),
         paper_bgcolor=_BG, plot_bgcolor=_BG, height=240,
         margin=dict(t=40, b=20, l=10, r=10),
         xaxis=dict(color=_TEXT),
         yaxis=dict(color=_MIST, gridcolor=_GRID, title="Duty %"),
-        legend=dict(font=dict(color=_TEXT), bgcolor="rgba(0,0,0,0)"),
+        legend=dict(font=dict(color=_INK), bgcolor="rgba(0,0,0,0)"),
     )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
     st.caption("Teal = what you actually pay with trade agreement · Red = standard rate")
@@ -637,9 +651,9 @@ def _render_schemes_visual(result):
     for i, s in enumerate(schemes[:3]):
         with cols[i]:
             st.markdown(
-                f"""<div style="background:rgba(227,168,87,0.08);border:1px solid {_BRASS}44;
+                f"""<div style="background:#fff;border:1px solid #e7e0d3;
                 border-radius:12px;padding:14px;">
-  <div style="font-size:13px;font-weight:700;color:{_BRASS};margin-bottom:6px;">{s.name}</div>
+  <div style="font-size:13px;font-weight:700;color:#0e7a6b;margin-bottom:6px;">{s.name}</div>
   <div style="font-size:11px;color:{_MIST};margin-bottom:4px;">{s.issuing_body}</div>
   <div style="font-size:12px;color:{_TEXT};">{s.benefit_summary[:100]}{'…' if len(s.benefit_summary)>100 else ''}</div>
 </div>""",
@@ -779,7 +793,7 @@ def _render_logistics_visual(result):
         mode="markers+text",
         text=countries,
         textposition="top center",
-        textfont=dict(color=_TEXT, size=12),
+        textfont=dict(color=_INK, size=12),
         marker=dict(
             size=22, color=_TEAL,
             line=dict(color=_BRASS, width=1.5),
@@ -840,12 +854,12 @@ def _render_documents_visual(result):
     fig.update_layout(
         barmode="overlay",
         title=dict(text="Certification Cost Range (USD)",
-                   font=dict(color=_TEXT, size=13)),
+                   font=dict(color=_INK, size=13)),
         paper_bgcolor=_BG, plot_bgcolor=_BG, height=220,
         margin=dict(t=40, b=20, l=10, r=10),
         xaxis=dict(color=_MIST, gridcolor=_GRID, title="USD"),
         yaxis=dict(color=_TEXT),
-        legend=dict(font=dict(color=_TEXT), bgcolor="rgba(0,0,0,0)"),
+        legend=dict(font=dict(color=_INK), bgcolor="rgba(0,0,0,0)"),
     )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
@@ -867,13 +881,13 @@ def _render_buyers_visual(result):
     for i, persona in enumerate(buyer_output.buyer_personas[:3]):
         with cols[i]:
             st.markdown(
-                f"""<div style="background:rgba(63,184,175,0.07);border:1px solid {_TEAL}33;
+                f"""<div style="background:#faf7f0;border:1px solid #e7e0d3;
                 border-radius:12px;padding:14px;height:180px;overflow:hidden;">
-  <div style="font-size:13px;font-weight:700;color:{_TEAL};margin-bottom:6px;">
+  <div style="font-size:13px;font-weight:700;color:#0e7a6b;margin-bottom:6px;">
     {persona.persona_name}</div>
   <div style="font-size:11px;color:{_TEXT};margin-bottom:8px;line-height:1.5;">
     {persona.description[:120]}{'…' if len(persona.description)>120 else ''}</div>
-  <div style="font-size:10px;color:{_BRASS};">📦 {persona.typical_order_size}</div>
+  <div style="font-size:10px;color:#d68a2b;">📦 {persona.typical_order_size}</div>
 </div>""",
                 unsafe_allow_html=True,
             )
@@ -882,7 +896,7 @@ def _render_buyers_visual(result):
         st.markdown("**Where to find them:**")
         channel_html = " ".join(
             f'<span style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);'
-            f'border-radius:20px;padding:3px 10px;font-size:11px;color:{_TEXT};margin:2px;'
+            f'border-radius:20px;padding:3px 10px;font-size:11px;color:#0e7a6b;margin:2px;'
             f'display:inline-block;">{c}</span>'
             for c in buyer_output.recommended_channels[:6]
         )
@@ -921,18 +935,18 @@ def _render_competitors_visual(result):
             labels=labels, values=values,
             marker=dict(colors=colors_pie,
                         line=dict(color="#0D1220", width=2)),
-            textfont=dict(color=_TEXT, size=11),
+            textfont=dict(color=_INK, size=11),
             hovertemplate="%{label}: %{value:.1f}%<extra></extra>",
             hole=0.45,
         ))
         fig.update_layout(
             title=dict(
                 text=f"{signal.destination_country} market share",
-                font=dict(color=_TEXT, size=13),
+                font=dict(color=_INK, size=13),
             ),
             paper_bgcolor=_BG, height=260,
             margin=dict(t=40, b=10, l=10, r=10),
-            legend=dict(font=dict(color=_TEXT, size=10),
+            legend=dict(font=dict(color=_INK, size=10),
                         bgcolor="rgba(0,0,0,0)"),
             annotations=[dict(
                 text=f"India<br>{india_share:.0f}%",

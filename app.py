@@ -6,6 +6,12 @@ st.set_page_config(
     layout="wide",
 )
 
+try:
+    from ui.theme import apply_theme
+    apply_theme()
+except Exception:
+    pass
+
 st.title("🌍 ExportAI")
 st.caption("AI-powered Export Intelligence Assistant")
 
