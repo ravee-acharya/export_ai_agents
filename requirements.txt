@@ -10,3 +10,4 @@ streamlit>=1.30.0
 requests>=2.31.0
 plotly>=5.20.0
 langchain-groq>=0.1.0
+reportlab>=4.0.0

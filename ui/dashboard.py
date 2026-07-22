@@ -109,6 +109,7 @@ def render_dashboard(result):
     scores = result.get("opportunity_scores", [])
     best   = _best_per_country(scores)
 
+    _render_export_buttons(result)
     _render_hero(result, best)
     _render_radar_chart(best)
 
@@ -146,6 +147,53 @@ def render_dashboard(result):
         with st.expander("⚠️ Agent issues", expanded=False):
             for e in errors:
                 st.caption(f"- {e}")
+
+
+
+# ─────────────────────────────────────────────────────────────────
+# Export buttons — PDF and PNG download
+# ─────────────────────────────────────────────────────────────────
+
+def _render_export_buttons(result):
+    col1, col2, col3 = st.columns([1, 1, 4])
+
+    with col1:
+        if st.button("📄 Export PDF", key="export_pdf_btn",
+                     help="Download full intelligence report as PDF"):
+            with st.spinner("Building PDF report..."):
+                try:
+                    from services.report_exporter import build_pdf
+                    pdf_bytes = build_pdf(result)
+                    sector = result.get("sector", "export")
+                    fname = f"ExportAI_{sector}_{__import__('datetime').datetime.now().strftime('%Y%m%d')}.pdf"
+                    st.download_button(
+                        label="⬇️ Download PDF",
+                        data=pdf_bytes,
+                        file_name=fname,
+                        mime="application/pdf",
+                        key="pdf_download_btn",
+                    )
+                except Exception as e:
+                    st.error(f"PDF export failed: {e}")
+
+    with col2:
+        if st.button("🖼️ Export Image", key="export_png_btn",
+                     help="Download high-quality summary image (PNG)"):
+            with st.spinner("Rendering image..."):
+                try:
+                    from services.report_exporter import build_png
+                    png_bytes = build_png(result)
+                    sector = result.get("sector", "export")
+                    fname = f"ExportAI_{sector}_{__import__('datetime').datetime.now().strftime('%Y%m%d')}.png"
+                    st.download_button(
+                        label="⬇️ Download Image",
+                        data=png_bytes,
+                        file_name=fname,
+                        mime="image/png",
+                        key="png_download_btn",
+                    )
+                except Exception as e:
+                    st.error(f"Image export failed: {e}")
 
 
 # ─────────────────────────────────────────────────────────────────
