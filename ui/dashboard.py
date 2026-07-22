@@ -116,7 +116,6 @@ def render_dashboard(result):
     scores = result.get("opportunity_scores", [])
     best   = _best_per_country(scores)
 
-    _render_export_buttons(result)
     _render_hero(result, best)
     _render_radar_chart(best)
 
@@ -161,43 +160,50 @@ def render_dashboard(result):
 # Export buttons — PDF and PNG download
 # ─────────────────────────────────────────────────────────────────
 
-def _render_export_buttons(result):
-    col1, col2, col3 = st.columns([1, 1, 4])
+def render_export_buttons(result):
+    """
+    Renders compact Export PDF / Export Image buttons. Called from
+    app.py's title row (top-right of the app), not from inside the
+    dashboard, so it's visible immediately without needing to scroll.
+    """
+    col1, col2 = st.columns(2)
 
     with col1:
-        if st.button("📄 Export PDF", key="export_pdf_btn",
+        if st.button("📄 PDF", key="export_pdf_btn", use_container_width=True,
                      help="Download full intelligence report as PDF"):
-            with st.spinner("Building PDF report..."):
+            with st.spinner("Building PDF..."):
                 try:
                     from services.report_exporter import build_pdf
                     pdf_bytes = build_pdf(result)
                     sector = result.get("sector", "export")
                     fname = f"ExportAI_{sector}_{__import__('datetime').datetime.now().strftime('%Y%m%d')}.pdf"
                     st.download_button(
-                        label="⬇️ Download PDF",
+                        label="⬇️ Download",
                         data=pdf_bytes,
                         file_name=fname,
                         mime="application/pdf",
                         key="pdf_download_btn",
+                        use_container_width=True,
                     )
                 except Exception as e:
                     st.error(f"PDF export failed: {e}")
 
     with col2:
-        if st.button("🖼️ Export Image", key="export_png_btn",
+        if st.button("🖼️ Image", key="export_png_btn", use_container_width=True,
                      help="Download high-quality summary image (PNG)"):
-            with st.spinner("Rendering image..."):
+            with st.spinner("Rendering..."):
                 try:
                     from services.report_exporter import build_png
                     png_bytes = build_png(result)
                     sector = result.get("sector", "export")
                     fname = f"ExportAI_{sector}_{__import__('datetime').datetime.now().strftime('%Y%m%d')}.png"
                     st.download_button(
-                        label="⬇️ Download Image",
+                        label="⬇️ Download",
                         data=png_bytes,
                         file_name=fname,
                         mime="image/png",
                         key="png_download_btn",
+                        use_container_width=True,
                     )
                 except Exception as e:
                     st.error(f"Image export failed: {e}")

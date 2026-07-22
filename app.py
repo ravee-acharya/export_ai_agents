@@ -12,14 +12,25 @@ try:
 except Exception:
     pass
 
-st.title("🌍 ExportAI")
-st.caption("AI-powered Export Intelligence Assistant")
-
 from ui.sidebar import render_sidebar
 from ui.chat import render_chat_history, add_user_message, add_assistant_message
-from ui.dashboard import render_dashboard, render_token_badge
+from ui.dashboard import render_dashboard, render_token_badge, render_export_buttons
 from ui.layout import create_layout
 from services.export_service import ExportService
+
+# ── Title row with Export buttons top-right ─────────────────────
+# (The "Share / Manage app" bar above this is Streamlit Cloud's own
+# platform toolbar -- outside our app entirely, no API to inject
+# into it. This row is the top-right of OUR app's own content area.)
+title_col, export_col = st.columns([3, 1])
+
+with title_col:
+    st.title("🌍 ExportAI")
+    st.caption("AI-powered Export Intelligence Assistant")
+
+with export_col:
+    if st.session_state.get("last_result"):
+        render_export_buttons(st.session_state["last_result"])
 
 provider, debug, certifications = render_sidebar()
 left_panel, chat_panel, right_panel = create_layout()
@@ -43,14 +54,14 @@ if question:
     add_user_message(question)
 
     with chat_panel:
-        with st.chat_message("user"):
+        with st.chat_message("user", avatar="🧑‍💼"):
             st.markdown(question)
 
     result = None
     answer = None
 
     with chat_panel:
-        with st.chat_message("assistant"):
+        with st.chat_message("assistant", avatar="🤖"):
             with st.spinner("Analyzing export opportunities..."):
                 try:
                     result = service.analyze_query(
@@ -66,6 +77,8 @@ if question:
     add_assistant_message(answer)
 
     if result:
+        st.session_state["last_result"] = result
+
         with right_panel:
             if debug:
                 st.subheader("Developer Output")

@@ -22,6 +22,7 @@ import streamlit as st
 
 _CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined');
 
 :root {
     --bg:        #f4f1ea;
@@ -116,7 +117,18 @@ h1 { font-weight: 800 !important; font-size: 1.6rem !important; }
 h2 { font-weight: 800 !important; font-size: 1.15rem !important; }
 h3 { font-weight: 700 !important; font-size: 1rem !important; }
 
-p, li, span:not([data-testid*="Icon"]), div:not([data-testid*="Icon"]) {
+/* Text color ONLY for genuine Streamlit-rendered markdown/text --
+   NEVER a bare div/span rule. Our custom HTML cards (hero banner,
+   score cards, buyer cards) set their own explicit inline colors
+   for a reason (white text on a dark teal background, etc). A rule
+   here that touches raw <div>/<span> forces every child element's
+   color via direct assignment, which beats inherited color from a
+   parent's inline style regardless of specificity -- that's what
+   was making the dark teal hero banner's text render as near-black
+   ink instead of the white it was set to. */
+[data-testid="stMarkdownContainer"] > p,
+[data-testid="stMarkdownContainer"] > ul li,
+[data-testid="stMarkdownContainer"] > ol li {
     color: var(--ink);
     font-family: 'Plus Jakarta Sans', sans-serif;
 }
