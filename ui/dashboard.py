@@ -160,7 +160,8 @@ def render_dashboard(result):
     summary = result.get("summary")
     if summary:
         with st.expander("📝 Full AI Analysis"):
-            st.markdown(summary)
+            from ui.chat import clean_llm_text
+            st.markdown(clean_llm_text(summary))
 
     errors = result.get("errors")
     if errors:
@@ -179,6 +180,8 @@ def _render_intelligence_view(result, best):
     consistent on how the score itself is explained).
     """
     summary = result.get("summary", "")
+    from ui.chat import clean_llm_text
+    summary = clean_llm_text(summary)
 
     st.markdown(
         f"""<div style="background:#fff;border:1px solid #c6c6cd;border-radius:12px;
@@ -876,7 +879,7 @@ def _render_schemes_visual(result):
                 border-radius:12px;padding:14px;">
   <div style="font-size:13px;font-weight:700;color:#0e7a6b;margin-bottom:6px;">{s.name}</div>
   <div style="font-size:11px;color:{_MIST};margin-bottom:4px;">{s.issuing_body}</div>
-  <div style="font-size:12px;color:{_TEXT};">{s.benefit_summary[:100]}{'…' if len(s.benefit_summary)>100 else ''}</div>
+  <div style="font-size:12px;color:{_TEXT};">{s.benefit_summary}</div>
 </div>""",
                 unsafe_allow_html=True,
             )
@@ -1103,11 +1106,11 @@ def _render_buyers_visual(result):
         with cols[i]:
             st.markdown(
                 f"""<div style="background:#faf7f0;border:1px solid #e7e0d3;
-                border-radius:12px;padding:14px;height:180px;overflow:hidden;">
+                border-radius:12px;padding:14px;height:100%;">
   <div style="font-size:13px;font-weight:700;color:#0e7a6b;margin-bottom:6px;">
     {persona.persona_name}</div>
   <div style="font-size:11px;color:{_TEXT};margin-bottom:8px;line-height:1.5;">
-    {persona.description[:120]}{'…' if len(persona.description)>120 else ''}</div>
+    {persona.description}</div>
   <div style="font-size:10px;color:#d68a2b;">📦 {persona.typical_order_size}</div>
 </div>""",
                 unsafe_allow_html=True,

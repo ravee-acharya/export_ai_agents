@@ -13,7 +13,7 @@ except Exception:
     pass
 
 from ui.sidebar import render_sidebar
-from ui.chat import render_chat_history, add_user_message, add_assistant_message
+from ui.chat import render_chat_history, add_user_message, add_assistant_message, clean_llm_text
 from ui.dashboard import render_dashboard, render_token_badge, render_export_buttons
 from ui.layout import create_layout
 from services.export_service import ExportService
@@ -33,7 +33,7 @@ with export_col:
         render_export_buttons(st.session_state["last_result"])
 
 provider, debug, certifications = render_sidebar()
-left_panel, chat_panel, right_panel = create_layout()
+chat_panel, right_panel = create_layout()
 
 if "export_service" not in st.session_state:
     st.session_state.export_service = ExportService(provider)
@@ -69,7 +69,7 @@ if question:
                         certifications=certifications,
                     )
                     answer = result.get("summary", "No summary generated.")
-                    st.markdown(answer)
+                    st.markdown(clean_llm_text(answer))
                 except Exception as ex:
                     answer = str(ex)
                     st.error(answer)

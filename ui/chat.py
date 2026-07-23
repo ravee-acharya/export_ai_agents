@@ -8,6 +8,26 @@ import streamlit as st
 _AVATARS = {"user": "🧑\u200d💼", "assistant": "🤖"}
 
 
+def clean_llm_text(text: str) -> str:
+    """
+    Strip stray single backticks from LLM-generated text before
+    rendering with st.markdown().
+
+    LLMs frequently wrap numbers/prices in backticks (e.g. `6.59`)
+    out of habit from code-generation training, with no code-block
+    intent. Markdown renders single backticks as inline `<code>`,
+    which browsers display in a monospace font with a gray
+    background -- causing the same paragraph to visually mix two
+    different fonts mid-sentence. Since a natural-language summary
+    never legitimately needs inline code formatting, backticks are
+    safe to strip outright rather than trying to distinguish
+    intentional from accidental usage.
+    """
+    if not text:
+        return text
+    return text.replace("`", "")
+
+
 def render_chat_history():
     if "messages" not in st.session_state:
         st.session_state.messages = []
@@ -16,7 +36,7 @@ def render_chat_history():
     for message in reversed(st.session_state.messages):
         avatar = _AVATARS.get(message["role"])
         with st.chat_message(message["role"], avatar=avatar):
-            st.markdown(message["content"])
+            st.markdown(clean_llm_text(message["content"]))
 
 
 def add_user_message(message):

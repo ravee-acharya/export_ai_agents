@@ -2,11 +2,10 @@ import streamlit as st
 
 
 def create_layout():
-
-    left, center, right = st.columns(
-        [1, 2, 1],
-        gap="large",
-    )
-
-    # Swap: dashboard in center, chat on right
-    return left, right, center
+    """
+    Two-column layout: dashboard 60%, chat 40%.
+    (Previously three columns with an unused left column that just
+    ate 25% of the page width as permanent blank space -- removed.)
+    """
+    dashboard, chat = st.columns([3, 2], gap="large")
+    return chat, dashboard

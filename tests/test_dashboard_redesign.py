@@ -38,7 +38,7 @@ def _stub_streamlit():
     st_stub.expander = MagicMock(return_value=FakeExpander())
     st_stub.container = MagicMock(return_value=FakeExpander())
     st_stub.columns = MagicMock(
-        side_effect=lambda spec: [MagicMock() for _ in (spec if isinstance(spec, list) else range(spec))]
+        side_effect=lambda spec, **kw: [MagicMock() for _ in (spec if isinstance(spec, list) else range(spec))]
     )
     st_stub.tabs = MagicMock(side_effect=lambda names: [FakeExpander() for _ in names])
     st_stub.plotly_chart = MagicMock()
@@ -284,3 +284,34 @@ def test_intelligence_view_handles_no_scores(st_stub):
     st_stub.radio = MagicMock(return_value="✨ Intelligence View")
     from ui.dashboard import render_dashboard
     render_dashboard({"summary": "test"})  # must not raise
+
+
+def test_clean_llm_text_strips_backticks():
+    """Real bug: LLM output wraps prices in backticks (`6.59`), which
+    markdown renders as inline <code> -- monospace font + gray box --
+    causing visibly inconsistent fonts mid-paragraph in the summary."""
+    from ui.chat import clean_llm_text
+    text = "FOB prices are `6.59` (US) and `6.48` (DE)."
+    cleaned = clean_llm_text(text)
+    assert "`" not in cleaned
+    assert "6.59" in cleaned
+    assert "6.48" in cleaned
+
+
+def test_clean_llm_text_handles_empty_and_none():
+    from ui.chat import clean_llm_text
+    assert clean_llm_text("") == ""
+    assert clean_llm_text(None) is None
+
+
+def test_layout_returns_exactly_two_columns():
+    """Real bug: create_layout() returned 3 columns but only 2 were ever
+    written into -- the unused left column was permanent blank space
+    eating 25% of the page width."""
+    import sys
+    for m in list(sys.modules):
+        if m.startswith('ui.layout'):
+            del sys.modules[m]
+    from ui.layout import create_layout
+    result = create_layout()
+    assert len(result) == 2, "layout must return exactly 2 usable columns, no wasted ones"
