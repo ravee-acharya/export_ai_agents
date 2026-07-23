@@ -87,11 +87,10 @@ def render_trade_globe(opportunity_scores: list[dict], height: int = 500) -> Non
     html = _build_html(markets, origin)
     # Wrap in a fixed-height div since st.html auto-sizes
     import urllib.parse
-    import streamlit.components.v1 as _cv1
-    # Use data URI with iframe -- the correct replacement for components.html
-    # that works on all Streamlit versions including post-2026 builds
+    # st.iframe (Streamlit 1.42+) is the correct replacement for
+    # components.v1.iframe, which is removed after 2026-06-01.
     encoded = urllib.parse.quote(html, safe="")
-    _cv1.iframe(f"data:text/html,{encoded}", height=height, scrolling=False)
+    _st_globe.iframe(f"data:text/html,{encoded}", height=height)
 
 
 def _build_html(markets, origin) -> str:

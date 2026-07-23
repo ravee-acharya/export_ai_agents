@@ -29,6 +29,7 @@ def _stub_streamlit():
                 'button', 'download_button', 'spinner']:
         setattr(st_stub, name, MagicMock())
     st_stub.radio = MagicMock(return_value="📊 Analytical View")
+    st_stub.iframe = MagicMock()
 
     class FakeExpander:
         def __enter__(self): return self

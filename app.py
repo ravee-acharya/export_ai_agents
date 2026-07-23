@@ -79,15 +79,23 @@ if question:
     if result:
         st.session_state["last_result"] = result
 
-        with right_panel:
-            if debug:
-                st.subheader("Developer Output")
-                st.json(result)
-            try:
-                render_dashboard(result)
-            except Exception as e:
-                st.error(f"Dashboard error: {e}")
+# ── Dashboard renders from persisted state, on EVERY rerun --
+# not gated behind a fresh question. Widgets inside the dashboard
+# (the Analytical/Intelligence toggle, tabs, export buttons) each
+# trigger their own script rerun where `question` is None again --
+# gating dashboard render behind `if question:` made those widgets
+# blank the whole right panel the instant they were touched.
+if st.session_state.get("last_result"):
+    result = st.session_state["last_result"]
+    with right_panel:
+        if debug:
+            st.subheader("Developer Output")
+            st.json(result)
         try:
-            render_token_badge(result)
-        except Exception:
-            pass
+            render_dashboard(result)
+        except Exception as e:
+            st.error(f"Dashboard error: {e}")
+    try:
+        render_token_badge(result)
+    except Exception:
+        pass
