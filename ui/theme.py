@@ -1,366 +1,241 @@
 """
-ExportAI visual theme — implements the Export Trading Terminal design.
+ExportAI visual theme — Material Design 3 tokens from the approved
+"ExportAI Intelligence Platform" design.
 
-Design tokens from the approved design:
-  bg        #f4f1ea  warm cream background
-  card      #ffffff  white cards
-  ink       #221f1a  near-black text
-  sub       #6d675c  secondary text
-  faint     #a29b8c  tertiary / placeholders
-  line      #e7e0d3  borders and dividers
-  brand     #0e7a6b  teal brand primary
-  brandsoft #e3f1ee  teal background tint
-  go        #2f9e6e  positive / green
-  warn      #d68a2b  amber / moderate
-  weak      #d15b4a  red / negative
-
-Font: Plus Jakarta Sans (Google Fonts, loaded via @import)
+Fonts: Hanken Grotesk (headlines), Inter (body), JetBrains Mono (labels)
+Colors: MD3 semantic tokens (primary/secondary/surface/error families)
 """
 
 import streamlit as st
 
 
 _CSS = """
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined');
+@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block');
 
 :root {
-    --bg:        #f4f1ea;
-    --card:      #ffffff;
-    --ink:       #221f1a;
-    --sub:       #6d675c;
-    --faint:     #a29b8c;
-    --line:      #e7e0d3;
-    --brand:     #0e7a6b;
-    --brandsoft: #e3f1ee;
-    --go:        #2f9e6e;
-    --warn:      #d68a2b;
-    --weak:      #d15b4a;
-    --sky:       #eaf1f4;
+    --bg:            #f7f9fb;
+    --on-bg:         #191c1e;
+    --surface-low:   #f2f4f6;
+    --surface:       #eceef0;
+    --surface-high:  #e6e8ea;
+    --surface-highest: #e0e3e5;
+    --surface-lowest: #ffffff;
+    --outline:       #76777d;
+    --outline-var:   #c6c6cd;
+    --primary:       #000000;
+    --primary-container: #131b2e;
+    --on-primary:    #ffffff;
+    --on-primary-container: #7c839b;
+    --secondary:     #006c49;
+    --secondary-container: #6cf8bb;
+    --secondary-fixed-dim: #4edea3;
+    --on-secondary:  #ffffff;
+    --on-secondary-container: #00714d;
+    --error:         #ba1a1a;
+    --error-container: #ffdad6;
+    --on-error-container: #93000a;
 }
 
-/* ── Base ─────────────────────────────────────────────── */
-/* Scoped to html/body only -- NEVER a blanket [class*="css"]
-   selector. Streamlit renders icons (chat avatars, button chevrons,
-   expander arrows) via font ligatures: the text "smart_toy" or
-   "arrow_right" IS the icon, rendered as a glyph by a specific icon
-   font. A blanket font-family override on every div/span breaks
-   that ligature and prints the raw icon name as literal text
-   instead of the icon -- this is what was happening before. */
 html, body {
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    -webkit-font-smoothing: antialiased;
+    font-family: 'Inter', sans-serif;
 }
 
-/* Protect Streamlit's icon font from any font-family override below */
 [data-testid="stIconMaterial"],
-[data-testid*="Icon"],
-.material-icons,
-.material-icons-outlined {
-    font-family: 'Material Symbols Outlined', 'Material Icons' !important;
+[data-testid*="Icon"] {
+    font-family: 'Material Symbols Outlined' !important;
 }
 
-.stApp {
-    background: var(--bg) !important;
-}
+.stApp { background: var(--bg) !important; }
 
 /* ── Sidebar ──────────────────────────────────────────── */
 [data-testid="stSidebar"] {
-    background: var(--card) !important;
-    border-right: 1px solid var(--line) !important;
+    background: var(--surface-low) !important;
+    border-right: 1px solid var(--outline-var) !important;
 }
-
-[data-testid="stSidebar"] * {
-    color: var(--ink) !important;
-}
-
-[data-testid="stSidebar"] label,
-[data-testid="stSidebar"] p {
-    color: var(--sub) !important;
+[data-testid="stSidebar"] * { color: var(--on-bg) !important; }
+[data-testid="stSidebar"] label, [data-testid="stSidebar"] p {
+    color: var(--outline) !important;
     font-size: 13px !important;
 }
-
-[data-testid="stSidebar"] h1,
-[data-testid="stSidebar"] h2,
-[data-testid="stSidebar"] h3 {
-    color: var(--ink) !important;
+[data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
+    font-family: 'Hanken Grotesk', sans-serif !important;
     font-weight: 800 !important;
+    color: var(--on-bg) !important;
 }
-
-/* Sidebar selectbox + multiselect -- explicit text color at every
-   nesting level. Works together with .streamlit/config.toml's
-   base="light" theme rather than fighting Streamlit's dark-mode
-   auto-detection underneath it. */
 [data-testid="stSidebar"] [data-baseweb="select"] > div {
-    background: var(--card) !important;
-    border-color: var(--line) !important;
-    border-radius: 10px !important;
+    background: var(--surface-lowest) !important;
+    border-color: var(--outline-var) !important;
+    border-radius: 8px !important;
 }
-
-[data-testid="stSidebar"] [data-baseweb="select"] * {
-    color: var(--ink) !important;
-}
+[data-testid="stSidebar"] [data-baseweb="select"] * { color: var(--on-bg) !important; }
 
 /* ── Main content ─────────────────────────────────────── */
-.main .block-container {
-    padding-top: 1.5rem !important;
-    max-width: 100% !important;
-}
+.main .block-container { padding-top: 1.5rem !important; max-width: 100% !important; }
 
 h1, h2, h3 {
-    color: var(--ink) !important;
-    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-family: 'Hanken Grotesk', sans-serif !important;
+    color: var(--on-bg) !important;
     letter-spacing: -0.01em !important;
 }
+h1 { font-weight: 700 !important; font-size: 1.6rem !important; }
+h2 { font-weight: 600 !important; font-size: 1.15rem !important; }
+h3 { font-weight: 600 !important; font-size: 1rem !important; }
 
-h1 { font-weight: 800 !important; font-size: 1.6rem !important; }
-h2 { font-weight: 800 !important; font-size: 1.15rem !important; }
-h3 { font-weight: 700 !important; font-size: 1rem !important; }
-
-/* Text color ONLY for genuine Streamlit-rendered markdown/text --
-   NEVER a bare div/span rule. Our custom HTML cards (hero banner,
-   score cards, buyer cards) set their own explicit inline colors
-   for a reason (white text on a dark teal background, etc). A rule
-   here that touches raw <div>/<span> forces every child element's
-   color via direct assignment, which beats inherited color from a
-   parent's inline style regardless of specificity -- that's what
-   was making the dark teal hero banner's text render as near-black
-   ink instead of the white it was set to. */
 [data-testid="stMarkdownContainer"] > p,
 [data-testid="stMarkdownContainer"] > ul li,
 [data-testid="stMarkdownContainer"] > ol li {
-    color: var(--ink);
-    font-family: 'Plus Jakarta Sans', sans-serif;
-}
-
-/* ── Cards (st.container with border) ────────────────── */
-[data-testid="stVerticalBlock"] > [data-testid="element-container"] > div {
-    background: var(--card);
+    color: var(--on-bg);
+    font-family: 'Inter', sans-serif;
 }
 
 /* ── Metrics ─────────────────────────────────────────── */
 [data-testid="stMetric"] {
-    background: var(--card) !important;
-    border: 1px solid var(--line) !important;
+    background: var(--surface-lowest) !important;
+    border: 1px solid var(--outline-var) !important;
     border-radius: 12px !important;
     padding: 14px 16px !important;
 }
-
 [data-testid="stMetricLabel"] {
-    color: var(--sub) !important;
-    font-size: 12px !important;
-    font-weight: 600 !important;
+    color: var(--outline) !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 11px !important;
+    text-transform: uppercase !important;
+    letter-spacing: .05em !important;
 }
-
 [data-testid="stMetricValue"] {
-    color: var(--ink) !important;
+    color: var(--on-bg) !important;
+    font-family: 'Hanken Grotesk', sans-serif !important;
     font-size: 22px !important;
-    font-weight: 800 !important;
+    font-weight: 700 !important;
 }
 
 /* ── Buttons ─────────────────────────────────────────── */
 .stButton > button {
-    background: var(--brand) !important;
-    color: #fff !important;
+    background: var(--primary) !important;
+    color: var(--on-primary) !important;
     border: none !important;
-    border-radius: 10px !important;
-    font-weight: 700 !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
     font-size: 13px !important;
+    font-family: 'Inter', sans-serif !important;
     padding: 10px 18px !important;
-    font-family: 'Plus Jakarta Sans', sans-serif !important;
-    transition: background 0.15s ease !important;
 }
+.stButton > button:hover { opacity: .9 !important; }
 
-.stButton > button:hover {
-    background: #0b6558 !important;
-}
-
-/* Download button */
 .stDownloadButton > button {
-    background: var(--brandsoft) !important;
-    color: var(--brand) !important;
-    border: 1px solid var(--brand) !important;
-    border-radius: 10px !important;
-    font-weight: 700 !important;
+    background: var(--secondary-container) !important;
+    color: var(--on-secondary-container) !important;
+    border: 1px solid var(--secondary) !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
     font-size: 13px !important;
 }
 
 /* ── Chat ─────────────────────────────────────────────── */
-[data-testid="stChatInput"] {
-    border-top: 1px solid var(--line) !important;
-    background: var(--card) !important;
-}
-
+[data-testid="stChatInput"] { border-top: 1px solid var(--outline-var) !important; background: var(--surface-lowest) !important; }
 [data-testid="stChatInput"] textarea {
-    background: var(--bg) !important;
-    border: 1px solid var(--line) !important;
-    border-radius: 10px !important;
-    font-family: 'Plus Jakarta Sans', sans-serif !important;
-    color: var(--ink) !important;
+    background: var(--surface-low) !important;
+    border: 1px solid var(--outline-var) !important;
+    border-radius: 24px !important;
+    font-family: 'Inter', sans-serif !important;
+    color: var(--on-bg) !important;
     font-size: 13px !important;
 }
+[data-testid="stChatInput"] button { background: var(--primary) !important; border-radius: 20px !important; }
 
-[data-testid="stChatInput"] button {
-    background: var(--brand) !important;
-    border-radius: 10px !important;
-}
-
-/* Chat messages */
 [data-testid="stChatMessage"] {
-    background: var(--card) !important;
-    border: 1px solid var(--line) !important;
+    background: var(--surface-lowest) !important;
+    border: 1px solid var(--outline-var) !important;
     border-radius: 14px !important;
     padding: 12px 14px !important;
     margin-bottom: 8px !important;
 }
-
-/* User message */
 [data-testid="stChatMessage"][data-testid*="user"] {
-    background: var(--brand) !important;
-    border-color: var(--brand) !important;
+    background: var(--primary-container) !important;
+    border-color: var(--primary-container) !important;
     color: #fff !important;
 }
 
 /* ── Tabs ─────────────────────────────────────────────── */
-[data-testid="stTabs"] [role="tablist"] {
-    border-bottom: 1px solid var(--line) !important;
-    gap: 2px !important;
-}
-
+[data-testid="stTabs"] [role="tablist"] { border-bottom: 1px solid var(--outline-var) !important; gap: 2px !important; }
 [data-testid="stTabs"] [role="tab"] {
-    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-family: 'Inter', sans-serif !important;
     font-size: 13.5px !important;
     font-weight: 600 !important;
-    color: var(--sub) !important;
-    border-radius: 9px 9px 0 0 !important;
+    color: var(--outline) !important;
+    border-radius: 8px 8px 0 0 !important;
     padding: 9px 16px !important;
     border: none !important;
     background: transparent !important;
 }
-
 [data-testid="stTabs"] [role="tab"][aria-selected="true"] {
-    color: var(--brand) !important;
-    background: var(--brandsoft) !important;
-    border-bottom: 2px solid var(--brand) !important;
+    color: var(--on-secondary-container) !important;
+    background: var(--secondary-container) !important;
+    border-bottom: 2px solid var(--secondary) !important;
 }
 
 /* ── Expander ─────────────────────────────────────────── */
 [data-testid="stExpander"] {
-    background: var(--card) !important;
-    border: 1px solid var(--line) !important;
+    background: var(--surface-lowest) !important;
+    border: 1px solid var(--outline-var) !important;
     border-radius: 12px !important;
 }
-
 [data-testid="stExpander"] summary {
-    font-weight: 700 !important;
-    color: var(--ink) !important;
+    font-weight: 600 !important;
+    color: var(--on-bg) !important;
     font-size: 13.5px !important;
 }
 
-/* ── Selectbox ────────────────────────────────────────── */
+/* ── Inputs ───────────────────────────────────────────── */
 [data-baseweb="select"] > div {
-    background: var(--card) !important;
-    border-color: var(--line) !important;
-    border-radius: 10px !important;
-    font-family: 'Plus Jakarta Sans', sans-serif !important;
-    font-size: 13px !important;
-    color: var(--ink) !important;
+    background: var(--surface-lowest) !important;
+    border-color: var(--outline-var) !important;
+    border-radius: 8px !important;
+    color: var(--on-bg) !important;
 }
-
-/* ── Text input ───────────────────────────────────────── */
 [data-testid="stTextInput"] input {
-    background: var(--card) !important;
-    border-color: var(--line) !important;
-    border-radius: 10px !important;
-    color: var(--ink) !important;
-    font-family: 'Plus Jakarta Sans', sans-serif !important;
-    font-size: 13px !important;
+    background: var(--surface-lowest) !important;
+    border-color: var(--outline-var) !important;
+    border-radius: 8px !important;
+    color: var(--on-bg) !important;
+    font-family: 'Inter', sans-serif !important;
 }
-
-/* ── Checkbox ─────────────────────────────────────────── */
 [data-testid="stCheckbox"] label {
-    font-size: 13px !important;
-    font-weight: 600 !important;
-    color: var(--sub) !important;
+    font-size: 13px !important; font-weight: 500 !important; color: var(--outline) !important;
 }
 
-/* ── Alerts / banners ─────────────────────────────────── */
-.stSuccess {
-    background: #e8f5ee !important;
-    border-left: 4px solid var(--go) !important;
-    color: #1a5c3a !important;
-    border-radius: 10px !important;
-}
+/* ── Alerts ───────────────────────────────────────────── */
+.stSuccess { background: var(--secondary-container) !important; border-left: 4px solid var(--secondary) !important; color: var(--on-secondary-container) !important; border-radius: 8px !important; }
+.stWarning { background: #fdf0dc !important; border-left: 4px solid #d68a2b !important; color: #7a4a0e !important; border-radius: 8px !important; }
+.stError   { background: var(--error-container) !important; border-left: 4px solid var(--error) !important; color: var(--on-error-container) !important; border-radius: 8px !important; }
+.stInfo    { background: #eaf1f4 !important; border-left: 4px solid var(--secondary) !important; color: #0b4a42 !important; border-radius: 8px !important; }
 
-.stWarning {
-    background: #fdf0dc !important;
-    border-left: 4px solid var(--warn) !important;
-    color: #7a4a0e !important;
-    border-radius: 10px !important;
-}
-
-.stError {
-    background: #fce8e4 !important;
-    border-left: 4px solid var(--weak) !important;
-    color: #7a2018 !important;
-    border-radius: 10px !important;
-}
-
-.stInfo {
-    background: var(--sky) !important;
-    border-left: 4px solid var(--brand) !important;
-    color: #0b4a42 !important;
-    border-radius: 10px !important;
-}
-
-/* ── Scrollbar ────────────────────────────────────────── */
+/* ── Misc ─────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-thumb {
-    background: var(--line);
-    border-radius: 5px;
-}
+::-webkit-scrollbar-thumb { background: var(--outline-var); border-radius: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-
-/* ── Plotly charts ────────────────────────────────────── */
-/* Override dark chart backgrounds to match light theme */
-.js-plotly-plot .plotly .bg { fill: transparent !important; }
-
-/* ── Divider ──────────────────────────────────────────── */
-hr {
-    border-color: var(--line) !important;
-    margin: 16px 0 !important;
-}
-
-/* ── Caption / small text ─────────────────────────────── */
+hr { border-color: var(--outline-var) !important; margin: 16px 0 !important; }
 .stCaption, small, [data-testid="stCaptionContainer"] {
-    color: var(--faint) !important;
-    font-size: 11.5px !important;
+    color: var(--outline) !important; font-size: 11.5px !important;
+    font-family: 'JetBrains Mono', monospace !important;
 }
-
-/* ── Spinner ──────────────────────────────────────────── */
-.stSpinner > div {
-    border-top-color: var(--brand) !important;
-}
-
-/* ── Page title bar ───────────────────────────────────── */
-header[data-testid="stHeader"] {
-    background: var(--card) !important;
-    border-bottom: 1px solid var(--line) !important;
-}
+.stSpinner > div { border-top-color: var(--secondary) !important; }
+header[data-testid="stHeader"] { background: var(--surface-lowest) !important; border-bottom: 1px solid var(--outline-var) !important; }
 """
 
 
 def apply_theme() -> None:
-    """Inject the Export Trading Terminal design system into the Streamlit app."""
+    """Inject the ExportAI Intelligence Platform Material Design theme."""
     st.markdown(f"<style>{_CSS}</style>", unsafe_allow_html=True)
 
 
 def render_score_ring(score: float, label: str = "Score") -> str:
-    """Return an SVG ring chart as an HTML string."""
-    _tier_color = (
-        "#2f9e6e" if score >= 60 else
+    """SVG ring chart matching the design's score visualization."""
+    tier_color = (
+        "#006c49" if score >= 60 else
         "#d68a2b" if score >= 30 else
-        "#d15b4a"
+        "#ba1a1a"
     )
     r = 28
     c = 2 * 3.14159 * r
@@ -368,15 +243,15 @@ def render_score_ring(score: float, label: str = "Score") -> str:
     return f"""
 <div style="position:relative;width:72px;height:72px;display:inline-block;">
   <svg width="72" height="72" viewBox="0 0 72 72">
-    <circle cx="36" cy="36" r="{r}" fill="none" stroke="#e7e0d3" stroke-width="7"/>
-    <circle cx="36" cy="36" r="{r}" fill="none" stroke="{_tier_color}"
+    <circle cx="36" cy="36" r="{r}" fill="none" stroke="#e0e3e5" stroke-width="7"/>
+    <circle cx="36" cy="36" r="{r}" fill="none" stroke="{tier_color}"
             stroke-width="7" stroke-linecap="round"
             stroke-dasharray="{dash}" transform="rotate(-90 36 36)"/>
   </svg>
   <div style="position:absolute;inset:0;display:flex;flex-direction:column;
               align-items:center;justify-content:center;">
-    <span style="font-size:15px;font-weight:800;color:#221f1a;
-                 font-family:'Plus Jakarta Sans',sans-serif;">{score:.0f}</span>
-    <span style="font-size:9px;color:#a29b8c;">{label}</span>
+    <span style="font-size:15px;font-weight:700;color:#191c1e;
+                 font-family:'Hanken Grotesk',sans-serif;">{score:.0f}</span>
+    <span style="font-size:9px;color:#76777d;font-family:'JetBrains Mono',monospace;">{label}</span>
   </div>
 </div>"""

@@ -20,20 +20,21 @@ def _go():
     import plotly.graph_objects as go
     return go
 
-# Design tokens from Export Trading Terminal (light theme)
-_TEAL  = "#0e7a6b"   # brand teal
-_BRASS = "#d68a2b"   # amber / warn
-_CORAL = "#d15b4a"   # red / weak
-_GO    = "#2f9e6e"   # green / positive
-_INK   = "#221f1a"   # near-black text
-_SUB   = "#6d675c"   # secondary text
-_MIST  = "#a29b8c"   # tertiary / faint
-_LINE  = "#e7e0d3"   # borders
+# Design tokens from ExportAI Intelligence Platform (Material Design 3)
+_TEAL  = "#006c49"   # secondary (brand)
+_BRASS = "#d68a2b"   # amber / warn (not in MD3 palette, kept for moderate tier)
+_CORAL = "#ba1a1a"   # error
+_GO    = "#4edea3"   # secondary-fixed-dim (mint accent)
+_INK   = "#191c1e"   # on-background
+_SUB   = "#76777d"   # outline
+_MIST  = "#c6c6cd"   # outline-variant
+_LINE  = "#c6c6cd"   # outline-variant (borders)
 _BG    = "rgba(0,0,0,0)"
 _CARD  = "#ffffff"
-_GRID  = "#e7e0d3"
-_TEXT  = "#221f1a"
-_SOFT  = "#e3f1ee"   # brand soft tint
+_GRID  = "#c6c6cd"
+_TEXT  = "#191c1e"
+_SOFT  = "#6cf8bb"   # secondary-container (mint)
+_NAVY  = "#131b2e"   # primary-container (hero card bg)
 
 
 def _score_tier(score):
@@ -123,6 +124,7 @@ def render_dashboard(result):
 
     with tabs[0]:
         _render_score_cards(best)
+        _render_score_methodology()
         _render_forecast_chart(result)
         _render_trade_globe_section(result)
 
@@ -257,40 +259,85 @@ def _render_hero(result, best):
         for c, s in others[:4]
     )
 
+    growth_positive = growth_str not in ("—",) and not growth_str.startswith("-")
+    growth_color = "#4edea3" if growth_positive else "#ffdad6"
+    risk_color = "#4edea3" if risk_lvl in ("Low", "—") else "#ffdad6" if risk_lvl == "Moderate" else "#ffb4ab"
+
     st.markdown(
-        f"""<div style="background:linear-gradient(100deg,#123f38,#0e7a6b);
-            border-radius:16px;padding:20px 24px;color:#fff;margin-bottom:4px;">
-  <div style="font-size:11px;opacity:.7;font-weight:600;letter-spacing:.04em;
-    text-transform:uppercase;margin-bottom:8px;">⭐ Top Pick For You · Ranked from demand, price, shipping &amp; safety</div>
-  <div style="display:flex;gap:28px;flex-wrap:wrap;align-items:center;">
-    <div>
-      <div style="font-size:28px;font-weight:800;letter-spacing:-.01em;">{emoji} {top_c}</div>
-      <div style="font-size:13px;opacity:.75;margin-top:3px;">Score {top_score:.0f} / 100</div>
+        f"""<div style="display:flex;background:#131b2e;border-radius:16px;
+        overflow:hidden;color:#fff;box-shadow:0 4px 20px rgba(19,27,46,.15);
+        margin-bottom:16px;">
+  <div style="padding:24px 28px;flex:1;">
+    <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,108,73,.2);
+      color:#4edea3;padding:5px 12px;border-radius:20px;margin-bottom:18px;">
+      <span style="font-size:13px;">⭐</span>
+      <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;">
+        Top Pick For You</span>
     </div>
-    <div style="display:flex;gap:24px;flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;gap:20px;margin-bottom:22px;">
+      <div style="width:64px;height:64px;background:rgba(255,255,255,.08);border-radius:16px;
+        display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;
+        font-family:'Hanken Grotesk',sans-serif;">{top_c}</div>
       <div>
-        <div style="font-size:11px;opacity:.7;">Demand growth</div>
-        <div style="font-size:21px;font-weight:800;color:#6ee7c7;margin-top:2px;">{growth_str}<span style="font-size:11px;opacity:.7;">/yr</span></div>
+        <div style="font-size:22px;font-weight:700;font-family:'Hanken Grotesk',sans-serif;">
+          {emoji} {label} Opportunity</div>
+        <div style="font-size:12px;opacity:.65;margin-top:2px;">
+          Ranked by demand, price, shipping &amp; safety</div>
       </div>
-      <div>
-        <div style="font-size:11px;opacity:.7;">Selling price</div>
-        <div style="font-size:21px;font-weight:800;margin-top:2px;">{fob}</div>
-        <div style="font-size:10px;opacity:.6;">per unit (FOB)</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;
+        padding:12px 14px;background:rgba(255,255,255,.05);border-radius:10px;
+        border:1px solid rgba(255,255,255,.08);">
+        <div>
+          <div style="font-size:10px;opacity:.6;text-transform:uppercase;letter-spacing:.05em;
+            font-family:'JetBrains Mono',monospace;">Demand Growth</div>
+          <div style="font-size:17px;font-weight:700;color:{growth_color};margin-top:3px;">{growth_str}/yr</div>
+        </div>
       </div>
-      <div>
-        <div style="font-size:11px;opacity:.7;">Ships in</div>
-        <div style="font-size:21px;font-weight:800;margin-top:2px;">{transit}</div>
-        <div style="font-size:10px;opacity:.6;">by sea</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;
+        padding:12px 14px;background:rgba(255,255,255,.05);border-radius:10px;
+        border:1px solid rgba(255,255,255,.08);">
+        <div>
+          <div style="font-size:10px;opacity:.6;text-transform:uppercase;letter-spacing:.05em;
+            font-family:'JetBrains Mono',monospace;">Selling Price</div>
+          <div style="font-size:17px;font-weight:700;margin-top:3px;">{fob} <span style="font-size:10px;font-weight:400;opacity:.6;">FOB</span></div>
+        </div>
       </div>
-      <div>
-        <div style="font-size:11px;opacity:.7;">Risk</div>
-        <div style="font-size:21px;font-weight:800;margin-top:2px;">{risk_lvl}</div>
-        <div style="font-size:10px;opacity:.6;">country safety</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;
+        padding:12px 14px;background:rgba(255,255,255,.05);border-radius:10px;
+        border:1px solid rgba(255,255,255,.08);">
+        <div>
+          <div style="font-size:10px;opacity:.6;text-transform:uppercase;letter-spacing:.05em;
+            font-family:'JetBrains Mono',monospace;">Ships In</div>
+          <div style="font-size:17px;font-weight:700;margin-top:3px;">{transit}</div>
+        </div>
       </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;
+        padding:12px 14px;background:rgba(255,255,255,.05);border-radius:10px;
+        border:1px solid rgba(255,255,255,.08);">
+        <div>
+          <div style="font-size:10px;opacity:.6;text-transform:uppercase;letter-spacing:.05em;
+            font-family:'JetBrains Mono',monospace;">Risk Level</div>
+          <div style="font-size:17px;font-weight:700;color:{risk_color};margin-top:3px;">{risk_lvl}</div>
+        </div>
+      </div>
+    </div>
+    <div style="font-size:11px;opacity:.5;margin-top:14px;">
+      Other markets: {others_html if others_html else "—"}
     </div>
   </div>
-  <div style="font-size:11px;opacity:.55;margin-top:10px;border-top:1px solid rgba(255,255,255,.15);padding-top:10px;">
-    Other markets: {others_html if others_html else "—"}
+  <div style="width:180px;background:rgba(255,255,255,.06);display:flex;flex-direction:column;
+    align-items:center;justify-content:center;padding:24px;border-left:1px solid rgba(255,255,255,.08);">
+    <div style="font-size:10px;opacity:.6;text-transform:uppercase;letter-spacing:.08em;
+      font-family:'JetBrains Mono',monospace;margin-bottom:6px;">Opportunity Score</div>
+    <div style="font-size:52px;font-weight:800;line-height:1;font-family:'Hanken Grotesk',sans-serif;">
+      {top_score:.0f}</div>
+    <div style="font-size:10px;opacity:.5;margin-top:4px;">Out of 100</div>
+    <div style="width:100%;background:rgba(255,255,255,.1);height:6px;border-radius:4px;
+      overflow:hidden;margin-top:14px;">
+      <div style="width:{top_score}%;height:100%;background:#4edea3;"></div>
+    </div>
   </div>
 </div>""",
         unsafe_allow_html=True,
@@ -476,6 +523,58 @@ def _render_single_forecast(signal):
 # Score cards — one visual card per market, no tables
 # ─────────────────────────────────────────────────────────────────
 
+def _render_score_methodology():
+    st.markdown(
+        """<div style="background:#fff;border:1px solid #c6c6cd;border-radius:12px;
+        padding:20px;margin:16px 0;">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+    <span style="font-size:16px;">ℹ️</span>
+    <span style="font-size:15px;font-weight:600;color:#191c1e;
+      font-family:'Hanken Grotesk',sans-serif;">How the Score is Calculated</span>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;">
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <span style="font-size:13px;font-weight:700;color:#191c1e;">Demand Growth</span>
+        <span style="font-size:10px;font-family:'JetBrains Mono',monospace;background:#eceef0;
+          padding:2px 7px;border-radius:6px;color:#191c1e;">30%</span>
+      </div>
+      <div style="font-size:12px;color:#76777d;line-height:1.5;">
+        Based on 3-year historical import trends and volume acceleration.</div>
+    </div>
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <span style="font-size:13px;font-weight:700;color:#191c1e;">Market Price</span>
+        <span style="font-size:10px;font-family:'JetBrains Mono',monospace;background:#eceef0;
+          padding:2px 7px;border-radius:6px;color:#191c1e;">25%</span>
+      </div>
+      <div style="font-size:12px;color:#76777d;line-height:1.5;">
+        Competitive analysis of FOB pricing vs local market averages.</div>
+    </div>
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <span style="font-size:13px;font-weight:700;color:#191c1e;">Logistics Efficiency</span>
+        <span style="font-size:10px;font-family:'JetBrains Mono',monospace;background:#eceef0;
+          padding:2px 7px;border-radius:6px;color:#191c1e;">20%</span>
+      </div>
+      <div style="font-size:12px;color:#76777d;line-height:1.5;">
+        Shipping time, port connectivity, and infrastructure reliability.</div>
+    </div>
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <span style="font-size:13px;font-weight:700;color:#191c1e;">Regulatory Risk</span>
+        <span style="font-size:10px;font-family:'JetBrains Mono',monospace;background:#eceef0;
+          padding:2px 7px;border-radius:6px;color:#191c1e;">25%</span>
+      </div>
+      <div style="font-size:12px;color:#76777d;line-height:1.5;">
+        Tariff benefits (FTA), trade barriers, and ease of doing business.</div>
+    </div>
+  </div>
+</div>""",
+        unsafe_allow_html=True,
+    )
+
+
 def _render_score_cards(best):
     if not best:
         return
@@ -492,24 +591,32 @@ def _render_score_cards(best):
         except: growth = "—"
 
         with cols[i]:
-            tier_colors = {"Strong": "#2f9e6e", "Moderate": "#d68a2b", "Weak": "#d15b4a"}
-            tier_soft   = {"Strong": "#e8f5ee", "Moderate": "#fdf0dc", "Weak": "#fce8e4"}
+            tier_colors = {"Strong": "#006c49", "Moderate": "#d68a2b", "Weak": "#ba1a1a"}
+            tier_soft   = {"Strong": "#6cf8bb", "Moderate": "#fdf0dc", "Weak": "#ffdad6"}
+            tier_soft_text = {"Strong": "#00714d", "Moderate": "#7a4a0e", "Weak": "#93000a"}
             tc = tier_colors.get(label, _TEAL)
             ts = tier_soft.get(label, _SOFT)
+            tst = tier_soft_text.get(label, "#00714d")
             st.markdown(
-                f"""<div style="background:#fff;border:1px solid #e7e0d3;
-                border-radius:14px;padding:18px;box-shadow:0 1px 3px rgba(40,30,10,.04);">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-    <div style="font-size:18px;font-weight:800;color:#221f1a;">{country}</div>
-    <span style="font-size:10px;font-weight:700;color:{tc};background:{ts};
-      padding:4px 9px;border-radius:20px;">{emoji} {label}</span>
+                f"""<div style="background:#fff;border:1px solid #c6c6cd;
+                border-radius:12px;padding:16px;transition:transform .15s;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+    <div style="font-size:17px;font-weight:700;color:#191c1e;font-family:'Hanken Grotesk',sans-serif;">{country}</div>
+    <span style="font-size:9px;font-weight:700;color:{tst};background:{ts};
+      padding:3px 9px;border-radius:16px;text-transform:uppercase;letter-spacing:.03em;">{label}</span>
   </div>
-  <div style="font-size:32px;font-weight:800;color:{tc};letter-spacing:-.01em;">{score:.0f}</div>
-  <div style="font-size:11px;color:#a29b8c;margin-top:2px;">/ 100 opportunity score</div>
-  <div style="height:6px;background:#f1ebde;border-radius:4px;overflow:hidden;margin-top:10px;">
-    <div style="width:{score}%;height:100%;background:{tc};border-radius:4px;"></div>
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:8px;">
+    <div>
+      <div style="font-size:28px;font-weight:700;color:{tc};line-height:1;
+        font-family:'Hanken Grotesk',sans-serif;">{score:.0f}</div>
+      <div style="font-size:9px;color:#76777d;text-transform:uppercase;letter-spacing:.03em;
+        font-family:'JetBrains Mono',monospace;margin-top:2px;">Score</div>
+    </div>
+    <div style="font-size:13px;font-weight:700;color:#006c49;">↑ {growth}</div>
   </div>
-  <div style="font-size:12px;color:#2f9e6e;font-weight:600;margin-top:8px;">↑ {growth} demand growth</div>
+  <div style="height:5px;background:#eceef0;border-radius:3px;overflow:hidden;">
+    <div style="width:{score}%;height:100%;background:{tc};"></div>
+  </div>
 </div>""",
                 unsafe_allow_html=True,
             )
