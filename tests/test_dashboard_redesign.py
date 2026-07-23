@@ -28,6 +28,7 @@ def _stub_streamlit():
                 'warning', 'error', 'info', 'divider', 'metric', 'html',
                 'button', 'download_button', 'spinner']:
         setattr(st_stub, name, MagicMock())
+    st_stub.radio = MagicMock(return_value="📊 Analytical View")
 
     class FakeExpander:
         def __enter__(self): return self
@@ -259,3 +260,26 @@ def test_export_service_local_structured_includes_token_usage():
 
     assert "token_usage" in result
     assert result["token_usage"]["total_tokens"] > 0
+
+
+def test_intelligence_view_renders_without_crashing(st_stub):
+    """The Intelligence View toggle must render the executive summary
+    layout without crashing, even with partial data."""
+    st_stub.radio = MagicMock(return_value="✨ Intelligence View")
+    from ui.dashboard import render_dashboard
+    result = {
+        "summary": "UAE is the strongest market.",
+        "opportunity_scores": [
+            {"hs_code": "6907", "destination_country": "AE", "score": 72.0,
+             "score_breakdown": {}, "note": ""},
+            {"hs_code": "6907", "destination_country": "DE", "score": 45.0,
+             "score_breakdown": {}, "note": ""},
+        ],
+    }
+    render_dashboard(result)  # must not raise
+
+
+def test_intelligence_view_handles_no_scores(st_stub):
+    st_stub.radio = MagicMock(return_value="✨ Intelligence View")
+    from ui.dashboard import render_dashboard
+    render_dashboard({"summary": "test"})  # must not raise

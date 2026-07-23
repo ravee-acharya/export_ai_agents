@@ -117,6 +117,18 @@ def render_dashboard(result):
     scores = result.get("opportunity_scores", [])
     best   = _best_per_country(scores)
 
+    view = st.radio(
+        "View mode",
+        ["📊 Analytical View", "✨ Intelligence View"],
+        horizontal=True,
+        label_visibility="collapsed",
+        key="dashboard_view_mode",
+    )
+
+    if view == "✨ Intelligence View":
+        _render_intelligence_view(result, best)
+        return
+
     _render_hero(result, best)
     _render_radar_chart(best)
 
@@ -155,6 +167,102 @@ def render_dashboard(result):
         with st.expander("⚠️ Agent issues", expanded=False):
             for e in errors:
                 st.caption(f"- {e}")
+
+
+def _render_intelligence_view(result, best):
+    """
+    Narrative-first view: one long-form AI report instead of charts.
+    Matches the design's 'Intelligence View' toggle state -- an
+    executive summary card, a two-column Market Dynamics / Strategic
+    Recommendations layout, and the same scoring methodology panel
+    used in Analytical View (kept identical so the two views stay
+    consistent on how the score itself is explained).
+    """
+    summary = result.get("summary", "")
+
+    st.markdown(
+        f"""<div style="background:#fff;border:1px solid #c6c6cd;border-radius:12px;
+        padding:22px;margin-bottom:16px;">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+    <span style="font-size:16px;">✨</span>
+    <span style="font-size:16px;font-weight:600;color:#191c1e;
+      font-family:'Hanken Grotesk',sans-serif;">AI Intelligence Report</span>
+  </div>
+  <div style="background:#f2f4f6;border-left:4px solid #000000;border-radius:8px;
+    padding:14px 16px;margin-bottom:18px;">
+    <div style="font-size:11px;font-weight:700;color:#000;text-transform:uppercase;
+      letter-spacing:.05em;margin-bottom:6px;">Executive Summary</div>
+    <div style="font-size:13.5px;color:#45464d;line-height:1.6;">{summary or "No summary generated for this query."}</div>
+  </div>
+</div>""",
+        unsafe_allow_html=True,
+    )
+
+    if best:
+        top_c, top_row = max(best.items(), key=lambda kv: kv[1].get("score", 0))
+        others = sorted(
+            [c for c in best if c != top_c],
+            key=lambda c: best[c].get("score", 0), reverse=True,
+        )
+
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown(
+                f"""<div style="background:#fff;border:1px solid #c6c6cd;border-radius:12px;
+                padding:18px;height:100%;">
+  <div style="font-size:13px;font-weight:700;color:#191c1e;margin-bottom:10px;">Market Dynamics</div>
+  <div style="font-size:13px;color:#45464d;line-height:1.7;">
+    <b>{top_c}</b> leads with the strongest opportunity score among the markets
+    evaluated. {"Runner-up markets: " + ", ".join(others[:3]) + "." if others else ""}
+    Growth trends and competitive positioning are detailed in the Analytical
+    View's forecast and radar charts.
+  </div>
+</div>""",
+                unsafe_allow_html=True,
+            )
+        with col2:
+            cap_output = result.get("capability_gap_output")
+            recs = []
+            if cap_output and getattr(cap_output, "upgrade_path", None):
+                recs = cap_output.upgrade_path[:3]
+            if not recs:
+                recs = [
+                    "Review the Money tab for pricing and duty-saving trade agreements.",
+                    "Check the Risk tab before committing to payment terms.",
+                    "Confirm certification requirements in the Logistics tab.",
+                ]
+            recs_html = "".join(f"<li style='margin-bottom:6px;'>{r}</li>" for r in recs)
+            st.markdown(
+                f"""<div style="background:#fff;border:1px solid #c6c6cd;border-radius:12px;
+                padding:18px;height:100%;">
+  <div style="font-size:13px;font-weight:700;color:#191c1e;margin-bottom:10px;">Strategic Recommendations</div>
+  <ul style="font-size:13px;color:#45464d;line-height:1.5;margin:0;padding-left:18px;">
+    {recs_html}
+  </ul>
+</div>""",
+                unsafe_allow_html=True,
+            )
+        st.markdown("")
+
+    _render_score_methodology()
+
+    doc_output = result.get("document_intelligence_output")
+    if doc_output and getattr(doc_output, "checklists", None):
+        docs = ", ".join(doc_output.checklists[0].mandatory_documents[:5])
+        st.markdown(
+            f"""<div style="background:#fff;border:1px solid #c6c6cd;border-radius:12px;
+            padding:16px 18px;display:flex;align-items:center;justify-content:space-between;
+            margin-top:16px;flex-wrap:wrap;gap:12px;">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span style="font-size:18px;">📄</span>
+    <div>
+      <div style="font-size:13px;font-weight:700;color:#191c1e;">Mandatory Export Documentation</div>
+      <div style="font-size:11.5px;color:#76777d;margin-top:2px;">{docs}</div>
+    </div>
+  </div>
+</div>""",
+            unsafe_allow_html=True,
+        )
 
 
 
